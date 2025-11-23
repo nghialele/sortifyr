@@ -4,6 +4,14 @@
 @import '@mantine/core/styles.layer.css';
 
 @layer base {
+  body {
+    font-family: Inter, sans-serif;
+    font-feature-settings: 'liga' 1, 'calt' 1;
+  }
+}
+
+@utility font-content {
+  font-family: "Inter", sans-serif;
 }
 
 @theme {
