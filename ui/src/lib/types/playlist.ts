@@ -10,7 +10,6 @@ export interface Playlist {
   public: boolean;
   tracks: number;
   collaborative: boolean;
-  updatedAt: Date;
 }
 
 export const convertPlaylist = (playlist: API.Playlist): Playlist => {
@@ -23,7 +22,6 @@ export const convertPlaylist = (playlist: API.Playlist): Playlist => {
     public: playlist.public,
     tracks: playlist.tracks,
     collaborative: playlist.collaborative,
-    updatedAt: new Date(playlist.updated_at),
   }
 }
 

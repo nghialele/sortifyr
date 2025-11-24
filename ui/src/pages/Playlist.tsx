@@ -1,5 +1,6 @@
 import { LoadingSpinner } from "@/components/molecules/LoadingSpinner"
-import { usePlaylistGetAll, usePlaylistSync } from "@/lib/api/playlist"
+import { usePlaylistGetAll } from "@/lib/api/playlist"
+import { useSync } from "@/lib/api/user"
 import { Playlist } from "@/lib/types/playlist"
 import { Button } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
@@ -7,12 +8,12 @@ import { notifications } from "@mantine/notifications"
 export const Playlists = () => {
   const { data: playlists, isLoading } = usePlaylistGetAll()
 
-  const playlistSync = usePlaylistSync()
+  const sync = useSync()
 
   if (isLoading) return <LoadingSpinner />
 
   const handleSync = () => {
-    playlistSync.mutate(undefined, {
+    sync.mutate(undefined, {
       onSuccess: () => notifications.show({ variant: "succes", message: "Syncing" }),
     })
   }

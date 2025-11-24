@@ -7,9 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
-	"github.com/gofiber/fiber/v2"
+	"github.com/topvennie/spotify_organizer/internal/database/model"
 	"github.com/topvennie/spotify_organizer/pkg/redis"
 	"go.uber.org/zap"
 )
@@ -26,15 +27,15 @@ type accountResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
-func (c *client) refreshToken(ctx context.Context, uid string) error {
+func (c *client) refreshToken(ctx context.Context, user model.User) error {
 	zap.S().Info("Refreshing spotify access token")
 
-	refreshToken, err := redis.C.Get(ctx, refreshKey(uid)).Result()
+	refreshToken, err := redis.C.Get(ctx, refreshKey(user)).Result()
 	if err != nil {
 		if !errors.Is(err, redis.ErrNil) {
-			return fmt.Errorf("get redis key %s | %w", refreshKey(uid), err)
+			return fmt.Errorf("get redis key %s | %w", refreshKey(user), err)
 		}
-		return fmt.Errorf("user %s refresh token not found", uid)
+		return fmt.Errorf("user %+v refresh token not found", user)
 	}
 
 	basicAuth := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "Basic %s:%s", c.clientID, c.clientSecret))
@@ -47,11 +48,9 @@ func (c *client) refreshToken(ctx context.Context, uid string) error {
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Authorization", basicAuth)
 
+	req.Form = url.Values{}
 	req.Form.Set("grant_type", "refresh_token")
 	req.Form.Set("refresh_token", refreshToken)
-
-	form := &fiber.Args{}
-	form.Add("grant_type", "client_credentials")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -62,6 +61,10 @@ func (c *client) refreshToken(ctx context.Context, uid string) error {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode == http.StatusBadRequest {
+			return ErrUnauthorized
+		}
+
 		return fmt.Errorf("unexpected status code %s", resp.Status)
 	}
 
@@ -74,12 +77,12 @@ func (c *client) refreshToken(ctx context.Context, uid string) error {
 		return fmt.Errorf("invalid token type %+v", account)
 	}
 
-	if _, err := redis.C.Set(ctx, accessKey(uid), account.AccessToken, time.Duration(account.ExpiresIn)*time.Second).Result(); err != nil {
+	if _, err := redis.C.Set(ctx, accessKey(user), account.AccessToken, time.Duration(account.ExpiresIn)*time.Second).Result(); err != nil {
 		return fmt.Errorf("set access token %w", err)
 	}
 
 	if account.RefreshToken != "" {
-		if _, err := redis.C.Set(ctx, refreshKey(uid), account.RefreshToken, 0).Result(); err != nil {
+		if _, err := redis.C.Set(ctx, refreshKey(user), account.RefreshToken, 0).Result(); err != nil {
 			return fmt.Errorf("set refresh token %w", err)
 		}
 	}
@@ -87,16 +90,16 @@ func (c *client) refreshToken(ctx context.Context, uid string) error {
 	return nil
 }
 
-func (c *client) request(ctx context.Context, uid, url string, target any) error {
+func (c *client) request(ctx context.Context, user model.User, url string, target any) error {
 	zap.S().Infof("do request for url %s", url)
 
-	accessToken, err := redis.C.Get(ctx, accessKey(uid)).Result()
+	accessToken, err := redis.C.Get(ctx, accessKey(user)).Result()
 	if err != nil {
 		if !errors.Is(err, redis.ErrNil) {
-			return fmt.Errorf("get redis key %s | %w", accessKey(uid), err)
+			return fmt.Errorf("get redis key %s | %w", accessKey(user), err)
 		}
 
-		if err := c.refreshToken(ctx, uid); err != nil {
+		if err := c.refreshToken(ctx, user); err != nil {
 			return err
 		}
 	}
@@ -127,7 +130,7 @@ func (c *client) request(ctx context.Context, uid, url string, target any) error
 		zap.S().Info("rate limit hit")
 		time.Sleep(5 * time.Second)
 
-		return c.request(ctx, uid, url, target)
+		return c.request(ctx, user, url, target)
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(target); err != nil {

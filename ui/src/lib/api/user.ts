@@ -24,7 +24,19 @@ export const useUserLogout = () => {
 
   return useMutation({
     mutationFn: async () => (await apiPost(`${ENDPOINT_AUTH}/logout`)).data,
-    onSuccess: async () => queryClient.invalidateQueries({ queryKey: ["user"] })
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["user"] })
   })
 }
 
+
+export const useSync = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => apiPost(`${ENDPOINT_USER}/sync`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["setting"] })
+      queryClient.invalidateQueries({ queryKey: ["playlist"] })
+    }
+  })
+}

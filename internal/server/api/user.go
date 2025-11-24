@@ -24,6 +24,7 @@ func NewUser(router fiber.Router, service service.Service) *User {
 
 func (u *User) routes() {
 	u.router.Get("/me", u.getMe)
+	u.router.Post("/sync", u.sync)
 }
 
 func (u *User) getMe(c *fiber.Ctx) error {
@@ -38,4 +39,17 @@ func (u *User) getMe(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(user)
+}
+
+func (u *User) sync(c *fiber.Ctx) error {
+	userID, ok := c.Locals("userID").(int)
+	if !ok {
+		return fiber.ErrUnauthorized
+	}
+
+	if err := u.user.Sync(c.Context(), userID); err != nil {
+		return err
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
 }

@@ -22,24 +22,25 @@ func (r *Repository) NewPlaylist() *Playlist {
 	}
 }
 
-func (p *Playlist) GetAllPopulated(ctx context.Context) ([]*model.Playlist, error) {
-	playlists, err := p.repo.queries(ctx).PlaylistGetAllWithOwner(ctx)
+func (p *Playlist) GetByUserPopulated(ctx context.Context, userID int) ([]*model.Playlist, error) {
+	playlists, err := p.repo.queries(ctx).PlaylistGetByUserWithOwner(ctx, int32(userID))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("get all playlists %w", err)
+		return nil, fmt.Errorf("get playlists by user %d | %w", userID, err)
 	}
 
-	return utils.SliceMap(playlists, func(r sqlc.PlaylistGetAllWithOwnerRow) *model.Playlist {
+	return utils.SliceMap(playlists, func(r sqlc.PlaylistGetByUserWithOwnerRow) *model.Playlist {
 		return model.PlaylistModelPopulated(r.Playlist, r.User)
 	}), nil
 }
 
 func (p *Playlist) Create(ctx context.Context, playlist *model.Playlist) error {
 	id, err := p.repo.queries(ctx).PlaylistCreate(ctx, sqlc.PlaylistCreateParams{
+		UserID:        int32(playlist.UserID),
 		SpotifyID:     playlist.SpotifyID,
-		OwnerID:       int32(playlist.OwnerID),
+		OwnerUid:      playlist.OwnerUID,
 		Name:          playlist.Name,
 		Description:   pgtype.Text{String: playlist.Description, Valid: playlist.Description != ""},
 		Public:        playlist.Public,
@@ -56,9 +57,9 @@ func (p *Playlist) Create(ctx context.Context, playlist *model.Playlist) error {
 }
 
 func (p *Playlist) Update(ctx context.Context, playlist model.Playlist) error {
-	if err := p.repo.queries(ctx).PlaylistUpdate(ctx, sqlc.PlaylistUpdateParams{
-		ID:            int32(playlist.ID),
-		OwnerID:       int32(playlist.OwnerID),
+	if err := p.repo.queries(ctx).PlaylistUpdateBySpotify(ctx, sqlc.PlaylistUpdateBySpotifyParams{
+		SpotifyID:     playlist.SpotifyID,
+		OwnerUid:      playlist.OwnerUID,
 		Name:          playlist.Name,
 		Description:   pgtype.Text{String: playlist.Description, Valid: playlist.Description != ""},
 		Public:        playlist.Public,

@@ -18,7 +18,9 @@ import (
 
 type Auth struct {
 	router fiber.Router
-	user   service.User
+
+	setting service.Setting
+	user    service.User
 
 	redirectURL string
 }
@@ -35,6 +37,7 @@ func NewAuth(router fiber.Router, service service.Service) *Auth {
 
 	api := &Auth{
 		router:      router.Group("/auth"),
+		setting:     *service.NewSetting(),
 		user:        *service.NewUser(),
 		redirectURL: config.GetDefaultString("auth.redirect_url", "/"),
 	}
@@ -60,12 +63,21 @@ func (r *Auth) loginCallback(c *fiber.Ctx) error {
 	dtoUser, err := r.user.GetByUID(c.Context(), user.UserID)
 	if err != nil {
 		if errors.Is(err, fiber.ErrNotFound) {
+			// New user
 			dtoUser = dto.User{
 				UID:   user.UserID,
 				Name:  user.Name,
 				Email: user.Email,
 			}
+
 			dtoUser, err = r.user.Create(c.Context(), dtoUser)
+			if err != nil {
+				return err
+			}
+
+			if _, err := r.setting.Create(c.Context(), dtoUser); err != nil {
+				return err
+			}
 		}
 		if err != nil {
 			return err

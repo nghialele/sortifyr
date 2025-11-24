@@ -2,9 +2,11 @@ import { isResponseNot200Error } from "@/lib/api/query";
 import { Button, Container, Title } from "@mantine/core";
 import { ErrorComponentProps, useNavigate } from "@tanstack/react-router";
 import { Error404 } from "./404";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 export const Error = ({ error, reset }: ErrorComponentProps) => {
   const navigate = useNavigate()
+  const { logout } = useAuth()
 
   if (isResponseNot200Error(error)) {
     switch (error.response.status) {
@@ -14,6 +16,10 @@ export const Error = ({ error, reset }: ErrorComponentProps) => {
             <Error404 />
           </Container>
         )
+      case 401:
+        logout()
+        navigate({ to: "/" })
+        break
     }
   }
 

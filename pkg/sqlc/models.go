@@ -10,15 +10,20 @@ import (
 
 type Playlist struct {
 	ID            int32
+	UserID        int32
 	SpotifyID     string
-	OwnerID       int32
+	OwnerUid      string
 	Name          string
 	Description   pgtype.Text
 	Public        bool
 	Tracks        int32
 	Collaborative bool
-	UpdatedAt     pgtype.Timestamptz
-	CreatedAt     pgtype.Timestamptz
+}
+
+type Setting struct {
+	ID          int32
+	UserID      int32
+	LastUpdated pgtype.Timestamptz
 }
 
 type User struct {

@@ -9,21 +9,13 @@ import (
 	"github.com/topvennie/spotify_organizer/pkg/utils"
 )
 
-func (c *client) PlaylistSync(ctx context.Context, uid string) error {
-	user, err := c.user.GetByUID(ctx, uid)
-	if err != nil {
-		return err
-	}
-	if user == nil {
-		return fmt.Errorf("user not found %s", uid)
-	}
-
-	playlistsDB, err := c.playlist.GetAllPopulated(ctx)
+func (c *client) playlistSync(ctx context.Context, user model.User) error {
+	playlistsDB, err := c.playlist.GetByUserPopulated(ctx, user.ID)
 	if err != nil {
 		return err
 	}
 
-	playlistsSpotify, err := c.GetAllPlaylists(ctx, uid)
+	playlistsSpotify, err := c.playlistGetAll(ctx, user)
 	if err != nil {
 		return err
 	}
@@ -34,7 +26,7 @@ func (c *client) PlaylistSync(ctx context.Context, uid string) error {
 
 	// Find the playlists that need to be created or updated
 	for i := range playlistsSpotify {
-		playlistDB, ok := utils.SliceFind(playlistsDB, func(p *model.Playlist) bool { return p.SpotifyID == playlistsSpotify[i].SpotifyID })
+		playlistDB, ok := utils.SliceFind(playlistsDB, func(p *model.Playlist) bool { return p.Equal(playlistsSpotify[i]) })
 		if !ok {
 			// Playlist doesn't exist yet
 			// Create it
@@ -44,7 +36,7 @@ func (c *client) PlaylistSync(ctx context.Context, uid string) error {
 
 		// Playlist already exist
 		// But is it still completely the same?
-		if !(*playlistDB).Equal(playlistsSpotify[i]) {
+		if !(*playlistDB).EqualEntry(playlistsSpotify[i]) {
 			// Not completely the same anymore
 			// Update it
 			toUpdate = append(toUpdate, playlistsSpotify[i])
@@ -52,48 +44,18 @@ func (c *client) PlaylistSync(ctx context.Context, uid string) error {
 	}
 
 	for i := range toCreate {
-		playlistOwner, err := c.user.GetByUID(ctx, toCreate[i].Owner.UID)
-		if err != nil {
+		if err := c.playlistUserCheck(ctx, toCreate[i].OwnerUID); err != nil {
 			return err
 		}
-		if playlistOwner == nil {
-			if err := c.user.Create(ctx, &toCreate[i].Owner); err != nil {
-				return err
-			}
-			playlistOwner = &toCreate[i].Owner
-		} else if playlistOwner.DisplayName != toCreate[i].Owner.DisplayName {
-			toCreate[i].Owner.ID = playlistOwner.ID
-			if err := c.user.Update(ctx, toCreate[i].Owner); err != nil {
-				return err
-			}
-			playlistOwner = &toCreate[i].Owner
-		}
-		toCreate[i].OwnerID = playlistOwner.ID
-
 		if err := c.playlist.Create(ctx, &toCreate[i]); err != nil {
 			return err
 		}
 	}
 
 	for i := range toUpdate {
-		playlistOwner, err := c.user.GetByUID(ctx, toUpdate[i].Owner.UID)
-		if err != nil {
+		if err := c.playlistUserCheck(ctx, toUpdate[i].OwnerUID); err != nil {
 			return err
 		}
-		if playlistOwner == nil {
-			if err := c.user.Create(ctx, &toUpdate[i].Owner); err != nil {
-				return err
-			}
-			playlistOwner = &toUpdate[i].Owner
-		} else if playlistOwner.DisplayName != toUpdate[i].Owner.DisplayName {
-			toUpdate[i].Owner.ID = playlistOwner.ID
-			if err := c.user.Update(ctx, toUpdate[i].Owner); err != nil {
-				return err
-			}
-			playlistOwner = &toUpdate[i].Owner
-		}
-		toUpdate[i].OwnerID = playlistOwner.ID
-
 		if err := c.playlist.Update(ctx, toUpdate[i]); err != nil {
 			return err
 		}
@@ -101,7 +63,7 @@ func (c *client) PlaylistSync(ctx context.Context, uid string) error {
 
 	// New and updated entries are now in the database
 	// Let's bring our local copy up to date
-	playlistsDB, err = c.playlist.GetAllPopulated(ctx)
+	playlistsDB, err = c.playlist.GetByUserPopulated(ctx, user.ID)
 	if err != nil {
 		return err
 	}
@@ -140,9 +102,11 @@ type playlist struct {
 	Collaborative bool `json:"collaborative"`
 }
 
-func (p *playlist) toModel() *model.Playlist {
+func (p *playlist) toModel(user model.User) *model.Playlist {
 	return &model.Playlist{
+		UserID:        user.ID,
 		SpotifyID:     p.SpotifyID,
+		OwnerUID:      p.Owner.UID,
 		Name:          p.Name,
 		Description:   p.Description,
 		Public:        p.Public,
@@ -160,39 +124,60 @@ type playListResponse struct {
 	Items []playlist `json:"items"`
 }
 
-func (c *client) GetAllPlaylists(ctx context.Context, uid string) ([]model.Playlist, error) {
+func (c *client) playlistGetAll(ctx context.Context, user model.User) ([]model.Playlist, error) {
 	playlists := make([]model.Playlist, 0)
 
 	limit := 50
 	offset := 0
 
-	resp, err := c.getPlaylists(ctx, uid, limit, offset)
+	resp, err := c.playlistGet(ctx, user, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("get playlist with limit %d and offset %d | %w", limit, offset, err)
 	}
-	playlists = append(playlists, utils.SliceMap(resp.Items, func(p playlist) model.Playlist { return *p.toModel() })...)
+	playlists = append(playlists, utils.SliceMap(resp.Items, func(p playlist) model.Playlist { return *p.toModel(user) })...)
 
 	total := resp.Total
 
 	for offset+limit < total {
 		offset += limit
 
-		resp, err := c.getPlaylists(ctx, uid, limit, offset)
+		resp, err := c.playlistGet(ctx, user, limit, offset)
 		if err != nil {
 			return nil, fmt.Errorf("get playlist with limit %d and offset %d | %w", limit, offset, err)
 		}
-		playlists = append(playlists, utils.SliceMap(resp.Items, func(p playlist) model.Playlist { return *p.toModel() })...)
+		playlists = append(playlists, utils.SliceMap(resp.Items, func(p playlist) model.Playlist { return *p.toModel(user) })...)
 	}
 
 	return playlists, nil
 }
 
-func (c *client) getPlaylists(ctx context.Context, uid string, limit, offset int) (playListResponse, error) {
+func (c *client) playlistGet(ctx context.Context, user model.User, limit, offset int) (playListResponse, error) {
 	var resp playListResponse
 
-	if err := c.request(ctx, uid, fmt.Sprintf("me/playlists?offset=%d&limit=%d", offset, limit), &resp); err != nil {
+	if err := c.request(ctx, user, fmt.Sprintf("me/playlists?offset=%d&limit=%d", offset, limit), &resp); err != nil {
 		return resp, fmt.Errorf("get playlist %w", err)
 	}
 
 	return resp, nil
+}
+
+// playlistUserCheck creates the user if it doesn't exist yet
+func (c *client) playlistUserCheck(ctx context.Context, userUID string) error {
+	user, err := c.user.GetByUID(ctx, userUID)
+	if err != nil {
+		return err
+	}
+	if user != nil {
+		return nil
+	}
+
+	user = &model.User{
+		UID: userUID,
+	}
+
+	if err := c.user.Create(ctx, user); err != nil {
+		return err
+	}
+
+	return nil
 }

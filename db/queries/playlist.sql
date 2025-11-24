@@ -1,18 +1,19 @@
--- name: PlaylistGetAllWithOwner :many
+-- name: PlaylistGetByUserWithOwner :many
 SELECT sqlc.embed(p), sqlc.embed(u)
 FROM playlists p
-LEFT JOIN users u ON u.id = p.owner_id
+LEFT JOIN users u ON u.uid = p.owner_uid
+WHERE p.user_id = $1
 ORDER BY p.name;
 
 -- name: PlaylistCreate :one
-INSERT INTO playlists (spotify_id, owner_id, name, description, public, tracks, collaborative)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO playlists (user_id, spotify_id, owner_uid, name, description, public, tracks, collaborative)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING id;
 
--- name: PlaylistUpdate :exec
+-- name: PlaylistUpdateBySpotify :exec
 UPDATE playlists
-SET owner_id = $2, name = $3, description = $4, public = $5, tracks = $6, collaborative = $7, updated_at = NOW()
-WHERE id = $1;
+SET owner_uid = $2, name = $3, description = $4, public = $5, tracks = $6, collaborative = $7
+WHERE spotify_id = $1;
 
 -- name: PlaylistDelete :exec
 DELETE FROM playlists
