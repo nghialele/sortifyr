@@ -4,8 +4,20 @@ export namespace API {
   }
 
   export interface User extends Base {
-    name: string;
-    email: string;
     uid: string;
+    name: string;
+    display_name: string;
+    email: string;
+  }
+
+  export interface Playlist extends Base {
+    spotify_id: string;
+    owner?: User;
+    name: string;
+    description?: string;
+    public: boolean;
+    tracks: number;
+    collaborative: boolean;
+    updated_at: string;
   }
 }

@@ -12,6 +12,10 @@ type Route = {
 };
 
 const routes: Route[] = [
+  {
+    title: "Playlists",
+    link: { to: "/playlist" },
+  }
 ];
 
 const NavLink = ({ route, closeNavbar }: { route: Route; closeNavbar?: () => void }) => {

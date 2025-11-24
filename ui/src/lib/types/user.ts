@@ -2,13 +2,21 @@ import { API } from "./api";
 
 export interface User {
   id: number;
+  uid: string;
   name: string;
   email: string;
-  uid: string;
 }
 
 // Converters
 
-export const convertUserToModel = (user: API.User): User => {
-  return user
+export const convertUser = (user: API.User): User => {
+  let name = user.name
+  if (user.display_name !== "") name = user.display_name
+
+  return {
+    id: user.id,
+    uid: user.uid,
+    name: name,
+    email: user.email,
+  }
 }

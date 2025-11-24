@@ -1,18 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { convertUserToModel } from "../types/user";
+import { convertUser } from "../types/user";
 import { apiGet, apiPost } from "./query";
+import { STALE_TIME } from "../types/staletime";
 
 const ENDPOINT_AUTH = "auth"
 const ENDPOINT_USER = "user"
 
-const STALE_30_MIN = 30 * 60 * 1000;
-
 export const useUser = () => {
   return useQuery({
     queryKey: ["user"],
-    queryFn: async () => (await apiGet(`${ENDPOINT_USER}/me`, convertUserToModel)).data,
+    queryFn: async () => (await apiGet(`${ENDPOINT_USER}/me`, convertUser)).data,
     retry: 0,
-    staleTime: STALE_30_MIN,
+    staleTime: STALE_TIME.MIN_30,
   })
 }
 
