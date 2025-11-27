@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/storage/minio"
 	"github.com/gofiber/storage/postgres/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/topvennie/spotify_organizer/pkg/config"
@@ -14,9 +15,20 @@ import (
 var S fiber.Storage
 
 func New(pool *pgxpool.Pool) error {
-	provider := config.GetDefaultString("storage.provider", "postgres")
+	provider := config.GetDefaultString("storage.provider", "minio")
 
 	switch provider {
+
+	case "minio":
+		S = minio.New(minio.Config{
+			Bucket:   config.GetDefaultString("minio.bucket", "spotify"),
+			Endpoint: config.GetString("minio.endpoint"),
+			Secure:   config.GetDefaultBool("minio.secure", false),
+			Credentials: minio.Credentials{
+				AccessKeyID:     config.GetString("minio.username"),
+				SecretAccessKey: config.GetString("minio.password"),
+			},
+		})
 
 	case "postgres":
 		S = postgres.New(postgres.Config{

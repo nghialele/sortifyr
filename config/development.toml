@@ -15,3 +15,8 @@ redirect_url = "http://127.0.0.1:3000"
 
 [auth.spotify]
 callback_url = "http://127.0.0.1:3001/api/auth/callback/spotify"
+
+[minio]
+endpoint = "minio:9000"
+username = "minio"
+password = "miniominio"
