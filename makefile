@@ -14,10 +14,6 @@ watch:
 	@docker compose up backend frontend
 	@docker compose down
 
-seed:
-	@docker compose up --abort-on-container-exit --exit-code-from seed seed
-	@docker compose down
-
 goose:
 	@docker compose down
 	@docker compose up db -d
@@ -43,4 +39,4 @@ query:
 dead:
 	@go tool deadcode ./...
 
-.PHONY: all setup build run watch seed goose migrate create-migration query dead
+.PHONY: all setup build run watch goose migrate create-migration query dead

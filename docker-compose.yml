@@ -44,21 +44,6 @@ services:
     depends_on:
       - backend
 
-  seed:
-    build:
-      dockerfile: Dockerfile.dev
-    command: sh -c "go build -o seed ./cmd/seed/ && ./seed"
-    restart: no
-    environment:
-      - INFISICAL_TOKEN
-      - INFISICAL_API_URL
-    volumes:
-      - .:/backend
-      - /backend/ui
-      - backend_packages:/go/pkg/mod
-    depends_on:
-      - db
-
 volumes:
   db_data:
   redis_data:
