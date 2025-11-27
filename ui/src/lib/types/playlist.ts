@@ -1,5 +1,7 @@
+import z from "zod";
 import { API } from "./api";
 import { convertUser, User } from "./user";
+import { JSONBody } from "./general";
 
 export interface Playlist {
   id: number;
@@ -28,3 +30,18 @@ export const convertPlaylist = (playlist: API.Playlist): Playlist => {
 export const convertPlaylists = (playlists: API.Playlist[]): Playlist[] => {
   return playlists.map(convertPlaylist)
 }
+
+export const convertPlaylistsSchema = (playlists: Playlist[]): PlaylistSchema[] => {
+  return playlists.map(p => ({
+    id: p.id,
+    name: p.name,
+    tracks: p.tracks,
+  }))
+}
+
+export const playlistSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  tracks: z.number(),
+})
+export type PlaylistSchema = z.infer<typeof playlistSchema> & JSONBody;

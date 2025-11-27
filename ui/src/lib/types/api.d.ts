@@ -23,4 +23,10 @@ export namespace API {
     tracks: number;
     collaborative: boolean;
   }
+
+  export interface Directory extends Base {
+    name: string;
+    children?: Directory[];
+    playlists: Playlist[];
+  }
 }

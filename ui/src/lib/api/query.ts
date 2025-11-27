@@ -20,6 +20,8 @@ const URLS: Record<string, string> = {
   PUBLIC: "/api",
 };
 
+type Body = JSONBody | JSONBody[];
+
 export async function apiGet<T, U = unknown>(
   endpoint: string,
   convertData?: (data: U) => T,
@@ -33,7 +35,7 @@ export async function apiGet<T, U = unknown>(
 
 export async function apiPost<T, U = unknown>(
   endpoint: string,
-  data: JSONBody = {},
+  data: Body = {},
   convertData?: (data: U) => T,
   files?: FileData[],
 ) {
@@ -52,7 +54,7 @@ export async function apiPost<T, U = unknown>(
 
 export async function apiPut<T, U = unknown>(
   endpoint: string,
-  data: JSONBody = {},
+  data: Body = {},
   convertData?: (data: U) => T,
   files?: FileData[],
 ) {
@@ -71,7 +73,7 @@ export async function apiPut<T, U = unknown>(
 
 export async function apiPatch<T, U = unknown>(
   endpoint: string,
-  data: JSONBody = {},
+  data: Body = {},
   convertData?: (data: U) => T,
   files?: FileData[],
 ) {
@@ -109,7 +111,7 @@ export function isResponseNot200Error(error: unknown): error is ResponseNot200Er
   return (error as ResponseNot200Error).response !== undefined;
 }
 
-function _buildFormData(data: JSONBody, files?: FileData[]): RequestInit {
+function _buildFormData(data: Body, files?: FileData[]): RequestInit {
   if (!files?.length) {
     return {
       body: JSON.stringify(camelToSnake(data)),

@@ -15,6 +15,14 @@ const routes: Route[] = [
   {
     title: "Playlists",
     link: { to: "/playlist" },
+  },
+  {
+    title: "Directories",
+    link: { to: "/directory" },
+  },
+  {
+    title: "Editor",
+    link: { to: "/directory_edit" },
   }
 ];
 
@@ -53,7 +61,7 @@ export const NavLayout = ({ children, ...props }: ComponentProps<"div">) => {
             <LinkButton to="/" variant="transparent" className="flex-1 flex items-center">
               <div className="flex gap-4 items-center">
                 <FaMusic className="size-8" />
-                <p className="font-bold text-xl hidden md:block">Music Organizer</p>
+                <p className="font-bold text-xl hidden md:block">Organizer</p>
               </div>
             </LinkButton>
             <div className="flex-1 justify-center hidden md:flex">

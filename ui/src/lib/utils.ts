@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { v4 as uuid } from 'uuid'
 
 export function camelToSnake(obj: unknown): unknown {
   if (obj === null || obj === undefined) {
@@ -32,4 +33,8 @@ function stringCamelToSnake(str: string) {
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
+}
+
+export function getUuid() {
+  return uuid();
 }

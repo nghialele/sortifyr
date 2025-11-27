@@ -1,0 +1,28 @@
+import { Button, Text, Group, ModalBaseProps, Stack } from "@mantine/core";
+import { ModalCenter } from "../atoms/ModalCenter";
+
+interface Props extends Omit<ModalBaseProps, 'title'> {
+  modalTitle: string;
+  title: string;
+  description?: string;
+  onConfirm: () => void;
+}
+
+export const Confirm = ({ modalTitle, title, description, onConfirm, ...props }: Props) => {
+  return (
+    <ModalCenter title={modalTitle} {...props}>
+      <Stack>
+        <Text fw="bold">{title}</Text>
+        {description && <Text className="whitespace-pre-wrap">{description}</Text>}
+        <Group justify="end">
+          <Button onClick={props.onClose} variant="default">
+            Cancel
+          </Button>
+          <Button onClick={onConfirm}>
+            Confirm
+          </Button>
+        </Group>
+      </Stack>
+    </ModalCenter>
+  )
+}

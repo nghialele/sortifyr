@@ -38,8 +38,6 @@ export const Error = ({ error, reset }: ErrorComponentProps) => {
       </Title>
       <p className="flex flex-col items-center mt-6 text-pretty text-lg font-medium text-gray-500 sm:text-xl/8">
         <span>Something went wrong</span>
-        <br />
-        <span>Our team has be notified!</span>
       </p>
       <div className="mt-10 flex items-center justify-center gap-x-6">
         <Button onClick={handleReturn}>

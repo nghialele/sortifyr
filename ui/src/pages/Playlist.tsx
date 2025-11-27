@@ -23,7 +23,7 @@ export const Playlists = () => {
       <Button onClick={handleSync}>
         Sync
       </Button>
-      <div className="grid grid-cols-4">
+      <div className="grid grid-cols-4 gap-4">
         {playlists?.map(p => <Entry key={p.id} playlist={p} />)}
       </div>
     </div>
@@ -32,7 +32,7 @@ export const Playlists = () => {
 
 const Entry = ({ playlist }: { playlist: Playlist }) => {
   return (
-    <div className="border border-gray-200 shadow-md">
+    <div className="border border-gray-200 shadow-md p-2">
       <p className="font-bold">{playlist.name}</p>
       <p>{`Tracks: ${playlist.tracks}`}</p>
     </div>

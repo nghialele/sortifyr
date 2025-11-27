@@ -37,6 +37,7 @@ export const useSync = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["setting"] })
       queryClient.invalidateQueries({ queryKey: ["playlist"] })
-    }
+    },
+    throwOnError: true,
   })
 }

@@ -1,9 +1,11 @@
 import { createRootRouteWithContext, createRoute, createRouter } from "@tanstack/react-router";
 import { App } from "./App";
 import { Error404 } from "./pages/404";
+import { Directories } from "./pages/Directory";
 import { Error } from "./pages/Error";
 import { Index } from "./pages/Index";
 import { Playlists } from "./pages/Playlist";
+import { DirectoryEditor } from "./pages/DirectoryEditor";
 
 const root = createRootRouteWithContext()({
   component: App,
@@ -21,9 +23,23 @@ const playlist = createRoute({
   component: Playlists,
 })
 
+const directory = createRoute({
+  getParentRoute: () => index,
+  path: "/directory",
+  component: Directories,
+})
+
+const directoryEditor = createRoute({
+  getParentRoute: () => index,
+  path: "/directory_edit",
+  component: DirectoryEditor,
+})
+
 const routeTree = root.addChildren([
   index.addChildren([
     playlist,
+    directory,
+    directoryEditor,
   ]),
 ])
 
