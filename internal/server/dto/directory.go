@@ -1,0 +1,50 @@
+package dto
+
+import (
+	"slices"
+
+	"github.com/topvennie/spotify_organizer/internal/database/model"
+	"github.com/topvennie/spotify_organizer/pkg/utils"
+)
+
+type Directory struct {
+	ID        int         `json:"id"`
+	Name      string      `json:"name" validate:"required"`
+	Children  []Directory `json:"children,omitzero"`
+	Playlists []Playlist  `json:"playlists" validate:"requird,min=1"`
+}
+
+func DirectoryDTO(d *model.Directory, models []*model.Directory) Directory {
+	childrenModels := utils.SliceFilter(models, func(m *model.Directory) bool { return m.ParentID == d.ID })
+	children := make([]Directory, 0, len(childrenModels))
+
+	for _, child := range childrenModels {
+		children = append(children, DirectoryDTO(child, models))
+	}
+
+	return Directory{
+		ID:        d.ID,
+		Name:      d.Name,
+		Children:  children,
+		Playlists: utils.SliceMap(d.Playlists, func(p model.Playlist) Playlist { return PlaylistDTO(&p, &p.Owner) }),
+	}
+}
+
+func (d Directory) ToModel(userID int, dtos []Directory) *model.Directory {
+	parentID := 0
+
+	parent, ok := utils.SliceFind(dtos, func(dto Directory) bool {
+		return slices.ContainsFunc(dto.Children, func(dt Directory) bool { return dt.ID == d.ID })
+	})
+	if ok {
+		parentID = parent.ID
+	}
+
+	return &model.Directory{
+		ID:        d.ID,
+		UserID:    userID,
+		Name:      d.Name,
+		ParentID:  parentID,
+		Playlists: utils.SliceMap(d.Playlists, func(p Playlist) model.Playlist { return *p.ToModel(userID) }),
+	}
+}

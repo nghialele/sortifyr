@@ -8,6 +8,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Directory struct {
+	ID       int32
+	UserID   int32
+	Name     string
+	ParentID pgtype.Int4
+}
+
+type DirectoryPlaylist struct {
+	ID          int32
+	DirectoryID int32
+	PlaylistID  int32
+}
+
 type Playlist struct {
 	ID            int32
 	UserID        int32

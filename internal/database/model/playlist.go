@@ -19,7 +19,7 @@ type Playlist struct {
 	Owner User
 }
 
-func PlaylistModelPopulated(p sqlc.Playlist, u sqlc.User) *Playlist {
+func PlaylistModel(p sqlc.Playlist) *Playlist {
 	description := ""
 	if p.Description.Valid {
 		description = p.Description.String
@@ -34,9 +34,14 @@ func PlaylistModelPopulated(p sqlc.Playlist, u sqlc.User) *Playlist {
 		Public:        p.Public,
 		Tracks:        int(p.Tracks),
 		Collaborative: p.Collaborative,
-
-		Owner: *UserModel(u),
 	}
+}
+
+func PlaylistModelPopulated(p sqlc.Playlist, u sqlc.User) *Playlist {
+	playlist := PlaylistModel(p)
+	playlist.Owner = *UserModel(u)
+
+	return playlist
 }
 
 func (p *Playlist) Equal(p2 Playlist) bool {

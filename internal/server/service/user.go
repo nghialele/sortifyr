@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/topvennie/spotify_organizer/internal/database/repository"
@@ -82,6 +83,10 @@ func (u *User) Sync(ctx context.Context, userID int) error {
 	}
 
 	if err := spotify.C.Sync(ctx, *user); err != nil {
+		if errors.Is(err, spotify.ErrUnauthorized) {
+			return fiber.ErrUnauthorized
+		}
+
 		zap.S().Error(err)
 		return fiber.ErrInternalServerError
 	}
