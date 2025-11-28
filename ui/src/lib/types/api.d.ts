@@ -22,6 +22,7 @@ export namespace API {
     public: boolean;
     tracks: number;
     collaborative: boolean;
+    has_cover: boolean;
   }
 
   export interface Directory extends Base {

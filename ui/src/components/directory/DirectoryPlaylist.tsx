@@ -2,7 +2,8 @@ import { PlaylistSchema } from "@/lib/types/playlist";
 import { cn } from "@/lib/utils";
 import { ActionIcon } from "@mantine/core";
 import { ComponentProps } from "react";
-import { FaRegCirclePlay, FaTrashCan } from "react-icons/fa6";
+import { FaTrashCan } from "react-icons/fa6";
+import { PlaylistCover } from "../playlist/PlaylistCover";
 
 type Props = {
   playlist: PlaylistSchema;
@@ -13,8 +14,8 @@ export const DirectoryPlaylist = ({ playlist, onDelete, className, ...props }: P
   return (
     <div className={cn("flex justify-between rounded-md bg-white p-4", className)} {...props}>
       <div className="flex items-center gap-2">
-        <FaRegCirclePlay className="text-green-500 w-8" />
-        <span>{playlist.name}</span>
+        <PlaylistCover playlist={playlist} />
+        <span className="whitespace-nowrap">{playlist.name}</span>
         <span className="text-muted text-sm">{playlist.tracks}</span>
       </div>
       <ActionIcon onClick={() => onDelete(playlist)} color="red" variant="subtle">

@@ -1,18 +1,22 @@
 import { useDirectoryGetAll } from "@/lib/api/directory";
 import { Directory } from "@/lib/types/directory";
+import { Playlist } from "@/lib/types/playlist";
 import { Group, RenderTreeNodePayload, Tree, TreeNodeData } from "@mantine/core";
 import { useMemo } from "react";
 import { FaRegCirclePlay, FaRegFolder, FaRegFolderOpen } from "react-icons/fa6";
 import { LoadingSpinner } from "../molecules/LoadingSpinner";
+import { PlaylistCover } from "./PlaylistCover";
 
 interface FileIconProps {
   isFolder: boolean;
+  playlist?: Playlist;
   expanded: boolean;
 }
 
-const FileIcon = ({ isFolder, expanded }: FileIconProps) => {
+const FileIcon = ({ playlist, isFolder, expanded }: FileIconProps) => {
   if (!isFolder) {
-    return <FaRegCirclePlay />
+    if (playlist) return <PlaylistCover playlist={playlist} className="w-6 h-6" />
+    else return <FaRegCirclePlay className="w-6" />
   }
 
   if (expanded) {
@@ -24,15 +28,17 @@ const FileIcon = ({ isFolder, expanded }: FileIconProps) => {
 
 const Leaf = ({ node, expanded, hasChildren, elementProps }: RenderTreeNodePayload) => {
   return (
-    <Group gap={5} {...elementProps}>
-      <FileIcon isFolder={hasChildren} expanded={expanded} />
-      <span>{node.label}</span>
+    <Group py={2} {...elementProps}>
+      <div className="flex items-center gap-2">
+        <FileIcon playlist={node.nodeProps?.playlist} isFolder={hasChildren} expanded={expanded} />
+        <span className="whitespace-nowrap">{node.label}</span>
+      </div>
     </Group>
   )
 }
 
 const toData = (directory: Directory): TreeNodeData => {
-  const playlists = directory.playlists.map(p => ({ label: p.name, value: p.name }))
+  const playlists = directory.playlists.map(p => ({ label: p.name, value: p.name, nodeProps: { "playlist": p } }))
 
   return {
     label: directory.name,

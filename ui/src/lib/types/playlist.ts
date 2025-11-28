@@ -12,6 +12,7 @@ export interface Playlist {
   public: boolean;
   tracks: number;
   collaborative: boolean;
+  hasCover: boolean;
 }
 
 export const convertPlaylist = (playlist: API.Playlist): Playlist => {
@@ -24,6 +25,7 @@ export const convertPlaylist = (playlist: API.Playlist): Playlist => {
     public: playlist.public,
     tracks: playlist.tracks,
     collaborative: playlist.collaborative,
+    hasCover: playlist.has_cover,
   }
 }
 
@@ -36,6 +38,7 @@ export const convertPlaylistsSchema = (playlists: Playlist[]): PlaylistSchema[] 
     id: p.id,
     name: p.name,
     tracks: p.tracks,
+    hasCover: p.hasCover,
   }))
 }
 
@@ -43,5 +46,6 @@ export const playlistSchema = z.object({
   id: z.number(),
   name: z.string(),
   tracks: z.number(),
+  hasCover: z.boolean(),
 })
 export type PlaylistSchema = z.infer<typeof playlistSchema> & JSONBody;

@@ -1,9 +1,10 @@
-import { Playlist } from "@/lib/types/playlist";
 import { usePlaylistGetAll } from "@/lib/api/playlist";
+import { Playlist } from "@/lib/types/playlist";
 import { DataTable, type DataTableSortStatus } from 'mantine-datatable';
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { FaCheck, FaX } from "react-icons/fa6";
 import { LoadingSpinner } from "../molecules/LoadingSpinner";
+import { PlaylistCover } from "./PlaylistCover";
 
 type SortKey = "name" | "tracks" | "owner.name"
 
@@ -38,17 +39,25 @@ export const PlaylistTableView = () => {
   if (isLoading) return <LoadingSpinner />
 
   return (
-    <div className="max-w-full overflow-x-scroll">
+    <div className="max-w-full overflow-scroll">
       <DataTable
         striped
         highlightOnHover
         backgroundColor={"none"}
         columns={[
+          {
+            accessor: "id",
+            title: "",
+            width: 52,
+            render: playlist => <PlaylistCover playlist={playlist} />,
+          },
           { accessor: "name", sortable: true },
           { accessor: "tracks", sortable: true },
           { accessor: "owner.name", sortable: true },
           {
-            accessor: "public", textAlign: "right", render: ({ public: p }) => (
+            accessor: "public",
+            textAlign: "right",
+            render: ({ public: p }) => (
               <div className="flex justify-end">
                 {p ? <FaCheck /> : <FaX />}
               </div>
