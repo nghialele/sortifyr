@@ -22,6 +22,18 @@ func (r *Repository) NewPlaylist() *Playlist {
 	}
 }
 
+func (p *Playlist) Get(ctx context.Context, playlistID int) (*model.Playlist, error) {
+	playlist, err := p.repo.queries(ctx).PlaylistGet(ctx, int32(playlistID))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get playlist by id %d | %w", playlistID, err)
+	}
+
+	return model.PlaylistModel(playlist), nil
+}
+
 func (p *Playlist) GetByUserPopulated(ctx context.Context, userID int) ([]*model.Playlist, error) {
 	playlists, err := p.repo.queries(ctx).PlaylistGetByUserWithOwner(ctx, int32(userID))
 	if err != nil {
@@ -46,6 +58,7 @@ func (p *Playlist) Create(ctx context.Context, playlist *model.Playlist) error {
 		Public:        playlist.Public,
 		Tracks:        int32(playlist.Tracks),
 		Collaborative: playlist.Collaborative,
+		CoverID:       pgtype.Text{String: playlist.CoverID, Valid: playlist.CoverID != ""},
 	})
 	if err != nil {
 		return fmt.Errorf("create playlist %+v | %w", *playlist, err)
@@ -65,6 +78,7 @@ func (p *Playlist) Update(ctx context.Context, playlist model.Playlist) error {
 		Public:        playlist.Public,
 		Tracks:        int32(playlist.Tracks),
 		Collaborative: playlist.Collaborative,
+		CoverID:       pgtype.Text{String: playlist.CoverID, Valid: playlist.CoverID != ""},
 	}); err != nil {
 		return fmt.Errorf("update playlist %+v | %w", playlist, err)
 	}

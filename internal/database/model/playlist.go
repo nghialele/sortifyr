@@ -14,6 +14,7 @@ type Playlist struct {
 	Public        bool
 	Tracks        int
 	Collaborative bool
+	CoverID       string
 
 	// Non db fields
 	Owner User
@@ -23,6 +24,10 @@ func PlaylistModel(p sqlc.Playlist) *Playlist {
 	description := ""
 	if p.Description.Valid {
 		description = p.Description.String
+	}
+	coverID := ""
+	if p.CoverID.Valid {
+		coverID = p.CoverID.String
 	}
 
 	return &Playlist{
@@ -34,6 +39,7 @@ func PlaylistModel(p sqlc.Playlist) *Playlist {
 		Public:        p.Public,
 		Tracks:        int(p.Tracks),
 		Collaborative: p.Collaborative,
+		CoverID:       coverID,
 	}
 }
 
@@ -49,5 +55,5 @@ func (p *Playlist) Equal(p2 Playlist) bool {
 }
 
 func (p *Playlist) EqualEntry(p2 Playlist) bool {
-	return p.OwnerUID == p2.OwnerUID && p.Name == p2.Name && p.Description == p2.Description && p.Public == p2.Public && p.Tracks == p2.Tracks && p.Collaborative == p2.Collaborative
+	return p.OwnerUID == p2.OwnerUID && p.Name == p2.Name && p.Description == p2.Description && p.Public == p2.Public && p.Tracks == p2.Tracks && p.Collaborative == p2.Collaborative && p.CoverID == p2.CoverID
 }

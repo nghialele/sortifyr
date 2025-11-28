@@ -3,11 +3,13 @@ module github.com/topvennie/spotify_organizer
 go 1.25.1
 
 require (
+	github.com/chai2010/webp v1.4.0
 	github.com/go-playground/validator/v10 v10.28.0
 	github.com/gofiber/contrib/fiberzap v1.0.2
 	github.com/gofiber/fiber/v2 v2.52.9
 	github.com/gofiber/storage/minio v0.4.0
 	github.com/gofiber/storage/postgres/v3 v3.3.0
+	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/joho/godotenv v1.5.1
 	github.com/markbates/goth v1.82.0
@@ -59,7 +61,6 @@ require (
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/google/cel-go v0.26.1 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/gorilla/sessions v1.4.0 // indirect

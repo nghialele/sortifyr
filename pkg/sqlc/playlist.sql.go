@@ -12,8 +12,8 @@ import (
 )
 
 const playlistCreate = `-- name: PlaylistCreate :one
-INSERT INTO playlists (user_id, spotify_id, owner_uid, name, description, public, tracks, collaborative)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+INSERT INTO playlists (user_id, spotify_id, owner_uid, name, description, public, tracks, collaborative, cover_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING id
 `
 
@@ -26,6 +26,7 @@ type PlaylistCreateParams struct {
 	Public        bool
 	Tracks        int32
 	Collaborative bool
+	CoverID       pgtype.Text
 }
 
 func (q *Queries) PlaylistCreate(ctx context.Context, arg PlaylistCreateParams) (int32, error) {
@@ -38,6 +39,7 @@ func (q *Queries) PlaylistCreate(ctx context.Context, arg PlaylistCreateParams) 
 		arg.Public,
 		arg.Tracks,
 		arg.Collaborative,
+		arg.CoverID,
 	)
 	var id int32
 	err := row.Scan(&id)
@@ -54,8 +56,32 @@ func (q *Queries) PlaylistDelete(ctx context.Context, id int32) error {
 	return err
 }
 
+const playlistGet = `-- name: PlaylistGet :one
+SELECT id, user_id, spotify_id, owner_uid, name, description, public, tracks, collaborative, cover_id
+FROM playlists
+WHERE id = $1
+`
+
+func (q *Queries) PlaylistGet(ctx context.Context, id int32) (Playlist, error) {
+	row := q.db.QueryRow(ctx, playlistGet, id)
+	var i Playlist
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.SpotifyID,
+		&i.OwnerUid,
+		&i.Name,
+		&i.Description,
+		&i.Public,
+		&i.Tracks,
+		&i.Collaborative,
+		&i.CoverID,
+	)
+	return i, err
+}
+
 const playlistGetByUserWithOwner = `-- name: PlaylistGetByUserWithOwner :many
-SELECT p.id, p.user_id, p.spotify_id, p.owner_uid, p.name, p.description, p.public, p.tracks, p.collaborative, u.id, u.uid, u.name, u.display_name, u.email
+SELECT p.id, p.user_id, p.spotify_id, p.owner_uid, p.name, p.description, p.public, p.tracks, p.collaborative, p.cover_id, u.id, u.uid, u.name, u.display_name, u.email
 FROM playlists p
 LEFT JOIN users u ON u.uid = p.owner_uid
 WHERE p.user_id = $1
@@ -86,6 +112,7 @@ func (q *Queries) PlaylistGetByUserWithOwner(ctx context.Context, userID int32) 
 			&i.Playlist.Public,
 			&i.Playlist.Tracks,
 			&i.Playlist.Collaborative,
+			&i.Playlist.CoverID,
 			&i.User.ID,
 			&i.User.Uid,
 			&i.User.Name,
@@ -104,7 +131,7 @@ func (q *Queries) PlaylistGetByUserWithOwner(ctx context.Context, userID int32) 
 
 const playlistUpdateBySpotify = `-- name: PlaylistUpdateBySpotify :exec
 UPDATE playlists
-SET owner_uid = $2, name = $3, description = $4, public = $5, tracks = $6, collaborative = $7
+SET owner_uid = $2, name = $3, description = $4, public = $5, tracks = $6, collaborative = $7, cover_id = $8
 WHERE spotify_id = $1
 `
 
@@ -116,6 +143,7 @@ type PlaylistUpdateBySpotifyParams struct {
 	Public        bool
 	Tracks        int32
 	Collaborative bool
+	CoverID       pgtype.Text
 }
 
 func (q *Queries) PlaylistUpdateBySpotify(ctx context.Context, arg PlaylistUpdateBySpotifyParams) error {
@@ -127,6 +155,7 @@ func (q *Queries) PlaylistUpdateBySpotify(ctx context.Context, arg PlaylistUpdat
 		arg.Public,
 		arg.Tracks,
 		arg.Collaborative,
+		arg.CoverID,
 	)
 	return err
 }

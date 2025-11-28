@@ -24,6 +24,7 @@ func NewPlaylist(router fiber.Router, service service.Service) *Playlist {
 
 func (p *Playlist) routes() {
 	p.router.Get("/", p.getAll)
+	p.router.Get("/cover/:id", p.getCover)
 }
 
 func (p *Playlist) getAll(c *fiber.Ctx) error {
@@ -38,4 +39,20 @@ func (p *Playlist) getAll(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(playlists)
+}
+
+func (p *Playlist) getCover(c *fiber.Ctx) error {
+	id, err := c.ParamsInt("id")
+	if err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, err.Error())
+	}
+
+	cover, err := p.playlist.GetCover(c.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	c.Set("Content-Type", mimeWEBP)
+
+	return sendCached(c, cover)
 }

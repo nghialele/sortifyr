@@ -4,11 +4,13 @@ FROM golang:1.25.1-alpine3.22 AS backend-builder
 # Set our working directory for this stage.
 WORKDIR /app
 
+RUN apk add --no-cache gcc musl-dev
+
 # Copy all of our files.
 COPY . .
 
 # Get and install all dependencies.
-RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/api/main.go
+RUN CGO_ENABLED=1 GOOS=linux go build -o server ./cmd/api/main.go
 RUN CGO_ENABLED=0 GOOS=linux go build -o migrate ./migrate.go
 
 FROM node:24.8.0-alpine3.22 AS base-frontend
@@ -37,6 +39,8 @@ FROM alpine:latest AS prod
 
 # Set our next working directory.
 WORKDIR /app
+
+RUN apk add --no-cache gcc musl-dev
 
 # Copy our executable and our built React application.
 COPY --from=backend-builder /app/server .

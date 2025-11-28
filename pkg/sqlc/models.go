@@ -31,6 +31,7 @@ type Playlist struct {
 	Public        bool
 	Tracks        int32
 	Collaborative bool
+	CoverID       pgtype.Text
 }
 
 type Setting struct {

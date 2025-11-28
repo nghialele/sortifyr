@@ -7,6 +7,7 @@ import (
 	"github.com/topvennie/spotify_organizer/internal/database/model"
 	"github.com/topvennie/spotify_organizer/internal/database/repository"
 	"github.com/topvennie/spotify_organizer/internal/server/dto"
+	"github.com/topvennie/spotify_organizer/pkg/storage"
 	"github.com/topvennie/spotify_organizer/pkg/utils"
 	"go.uber.org/zap"
 )
@@ -35,4 +36,26 @@ func (p *Playlist) GetByUser(ctx context.Context, userID int) ([]dto.Playlist, e
 	}
 
 	return utils.SliceMap(playlistsDB, func(p *model.Playlist) dto.Playlist { return dto.PlaylistDTO(p, &p.Owner) }), nil
+}
+
+func (p *Playlist) GetCover(ctx context.Context, playlistID int) ([]byte, error) {
+	playlist, err := p.playlist.Get(ctx, playlistID)
+	if err != nil {
+		zap.S().Error(err)
+		return nil, fiber.ErrInternalServerError
+	}
+	if playlist == nil {
+		return nil, fiber.ErrNotFound
+	}
+	if playlist.CoverID == "" {
+		return nil, fiber.ErrNotFound
+	}
+
+	cover, err := storage.S.Get(playlist.CoverID)
+	if err != nil {
+		zap.S().Error(err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	return cover, nil
 }
