@@ -4,14 +4,18 @@ import { useSync } from "@/lib/api/user"
 import { formatDate } from "@/lib/utils"
 import { Button, Title } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
+import { useState } from "react"
 import { FaCheck } from "react-icons/fa6"
 
 export const Home = () => {
   const { data: settings, isLoading } = useSettingGet()
 
+  const [syncing, setSyncing] = useState(false)
+
   const sync = useSync()
 
   const handleSync = () => {
+    setSyncing(true)
     const id = notifications.show({
       loading: true,
       title: "Sync",
@@ -30,12 +34,11 @@ export const Home = () => {
         loading: false,
         autoClose: 3000,
       }),
+      onSettled: () => setSyncing(false),
     })
   }
 
   if (isLoading) return <LoadingSpinner />
-
-  console.log(settings)
 
   return (
     <div className="flex flex-col justify-center items-center h-full pt-[10%]">
@@ -46,7 +49,7 @@ export const Home = () => {
         {`Last sync: ${settings?.lastUpdate ? formatDate(settings?.lastUpdate) : "Never"}`}
       </p>
       <div className="mt-10">
-        <Button onClick={handleSync}>
+        <Button onClick={handleSync} loading={syncing}>
           Synchronize
         </Button>
       </div>

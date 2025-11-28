@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/topvennie/spotify_organizer/internal/database/model"
@@ -38,19 +39,19 @@ func (c *client) refreshToken(ctx context.Context, user model.User) error {
 		return fmt.Errorf("user %+v refresh token not found", user)
 	}
 
-	basicAuth := base64.StdEncoding.EncodeToString(fmt.Appendf(nil, "Basic %s:%s", c.clientID, c.clientSecret))
+	form := url.Values{}
+	form.Set("grant_type", "refresh_token")
+	form.Set("refresh_token", refreshToken)
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiAccount, http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiAccount, strings.NewReader(form.Encode()))
 	if err != nil {
 		return fmt.Errorf("new http request %w", err)
 	}
 
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("Authorization", basicAuth)
+	creds := base64.StdEncoding.EncodeToString([]byte(c.clientID + ":" + c.clientSecret))
 
-	req.Form = url.Values{}
-	req.Form.Set("grant_type", "refresh_token")
-	req.Form.Set("refresh_token", refreshToken)
+	req.Header.Set("content-type", "application/x-www-form-urlencoded")
+	req.Header.Set("Authorization", "Basic "+creds)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
