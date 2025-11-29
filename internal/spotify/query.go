@@ -91,18 +91,29 @@ func (c *client) refreshToken(ctx context.Context, user model.User) error {
 	return nil
 }
 
-func (c *client) request(ctx context.Context, user model.User, url string, target any) error {
-	zap.S().Infof("do request for url %s", url)
-
+func (c *client) getAccessToken(ctx context.Context, user model.User) (string, error) {
 	accessToken, err := redis.C.Get(ctx, accessKey(user)).Result()
 	if err != nil {
 		if !errors.Is(err, redis.ErrNil) {
-			return fmt.Errorf("get redis key %s | %w", accessKey(user), err)
+			return "", fmt.Errorf("get redis key %s | %w", accessKey(user), err)
 		}
 
 		if err := c.refreshToken(ctx, user); err != nil {
-			return err
+			return "", err
 		}
+
+		return c.getAccessToken(ctx, user)
+	}
+
+	return accessToken, nil
+}
+
+func (c *client) request(ctx context.Context, user model.User, url string, target any) error {
+	zap.S().Infof("do request for url %s", url)
+
+	accessToken, err := c.getAccessToken(ctx, user)
+	if err != nil {
+		return err
 	}
 
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", apiSpotify, url), http.NoBody)
