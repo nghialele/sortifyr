@@ -5,25 +5,23 @@ services:
       POSTGRES_DB: spotify_organizer
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    volumes:
-      - db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 10
-    ports:
-      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
 
   redis:
     image: redis:7-alpine
-    volumes:
-      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
+    volumes:
+      - redis_data:/data
 
   minio:
     image: quay.io/minio/minio
@@ -31,26 +29,19 @@ services:
     environment:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: miniominio
-    volumes:
-      - minio_data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
       interval: 10s
       timeout: 5s
       retries: 12
-    ports:
-      - "9001:9001"
-
-  backend:
-    build:
-      dockerfile: Dockerfile.dev
-    command: sh -c "go mod tidy && air -c .air.toml"
-    ports:
-      - 3001:3001
     volumes:
-      - .:/backend
-      - /backend/ui
-      - backend_packages:/go/pkg/mod
+      - minio_data:/data
+
+  spotify_organizer:
+    image: ghcr.io/topvennie/spotify_organizer:latest
+    env_file: .env
+    ports:
+      - 8000:8000
     depends_on:
       db:
         condition: service_healthy
@@ -59,21 +50,7 @@ services:
       minio:
         condition: service_healthy
 
-  frontend:
-    build:
-      context: ui
-      dockerfile: Dockerfile.dev
-    ports:
-      - 3000:3000
-    volumes:
-      - ./ui:/frontend
-      - frontend_packages:/frontend/node_modules
-    depends_on:
-      - backend
-
 volumes:
   db_data:
   redis_data:
   minio_data:
-  backend_packages:
-  frontend_packages:

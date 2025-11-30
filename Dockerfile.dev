@@ -9,3 +9,5 @@ COPY .air.toml .
 
 COPY go.mod go.sum ./
 
+ENV APP_ENV=development
+
