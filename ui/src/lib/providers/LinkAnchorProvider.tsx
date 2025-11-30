@@ -131,8 +131,8 @@ export const LinkAnchorProvider = ({ children }: PropsWithChildren) => {
   }, [draggingFrom])
 
   useEffect(() => {
-    window.addEventListener("resize", notifyLayoutChange)
-    window.addEventListener("scroll", notifyLayoutChange)
+    window.addEventListener("resize", () => setLayoutVersion(v => v + 1))
+    window.addEventListener("scroll", () => setLayoutVersion(v => v + 1))
 
     return () => {
       window.removeEventListener("resize", notifyLayoutChange)
