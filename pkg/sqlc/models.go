@@ -5,8 +5,53 @@
 package sqlc
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type TaskResult string
+
+const (
+	TaskResultSuccess TaskResult = "success"
+	TaskResultFailed  TaskResult = "failed"
+)
+
+func (e *TaskResult) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TaskResult(s)
+	case string:
+		*e = TaskResult(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TaskResult: %T", src)
+	}
+	return nil
+}
+
+type NullTaskResult struct {
+	TaskResult TaskResult
+	Valid      bool // Valid is true if TaskResult is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTaskResult) Scan(value interface{}) error {
+	if value == nil {
+		ns.TaskResult, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TaskResult.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTaskResult) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TaskResult), nil
+}
 
 type Directory struct {
 	ID       int32
@@ -53,6 +98,23 @@ type Setting struct {
 	ID          int32
 	UserID      int32
 	LastUpdated pgtype.Timestamptz
+}
+
+type Task struct {
+	Uid    string
+	Name   string
+	Active bool
+}
+
+type TaskRun struct {
+	ID       int32
+	TaskUid  string
+	UserID   pgtype.Int4
+	RunAt    pgtype.Timestamptz
+	Result   TaskResult
+	Message  pgtype.Text
+	Error    pgtype.Text
+	Duration int64
 }
 
 type Track struct {
