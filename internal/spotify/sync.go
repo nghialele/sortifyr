@@ -1,10 +1,13 @@
 package spotify
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/topvennie/spotify_organizer/internal/database/model"
+	"github.com/topvennie/spotify_organizer/pkg/storage"
 	"github.com/topvennie/spotify_organizer/pkg/utils"
 )
 
@@ -25,34 +28,25 @@ func (c *client) playlistSync(ctx context.Context, user model.User) error {
 
 	// Find the playlists that need to be created or updated
 	for i := range playlistsSpotify {
-		playlistDB, ok := utils.SliceFind(playlistsDB, func(p *model.Playlist) bool { return p.Equal(playlistsSpotify[i].model) })
+		playlistDB, ok := utils.SliceFind(playlistsDB, func(p *model.Playlist) bool { return p.Equal(playlistsSpotify[i]) })
 		if !ok {
 			// Playlist doesn't exist yet
 			// Create it
-			toCreate = append(toCreate, playlistsSpotify[i].model)
-			if err := c.playlistSaveCover(&playlistsSpotify[i].model, nil, playlistsSpotify[i].Images); err != nil {
-				return err
-			}
-
+			toCreate = append(toCreate, playlistsSpotify[i])
 			continue
-		}
-
-		// Regardless if any of the other data changed, let's update the cover if we can
-		if err := c.playlistSaveCover(&playlistsSpotify[i].model, *playlistDB, playlistsSpotify[i].Images); err != nil {
-			return err
 		}
 
 		// Playlist already exist
 		// But is it still completely the same?
-		if !(*playlistDB).EqualEntry(playlistsSpotify[i].model) {
+		if !(*playlistDB).EqualEntry(playlistsSpotify[i]) {
 			// Not completely the same anymore
 			// Update it
-			toUpdate = append(toUpdate, playlistsSpotify[i].model)
+			toUpdate = append(toUpdate, playlistsSpotify[i])
 		}
 	}
 
 	for i := range toCreate {
-		if err := c.playlistUserCheck(ctx, toCreate[i].OwnerUID); err != nil {
+		if err := c.userCheck(ctx, toCreate[i].OwnerUID); err != nil {
 			return err
 		}
 		if err := c.playlist.Create(ctx, &toCreate[i]); err != nil {
@@ -61,7 +55,7 @@ func (c *client) playlistSync(ctx context.Context, user model.User) error {
 	}
 
 	for i := range toUpdate {
-		if err := c.playlistUserCheck(ctx, toUpdate[i].OwnerUID); err != nil {
+		if err := c.userCheck(ctx, toUpdate[i].OwnerUID); err != nil {
 			return err
 		}
 		if err := c.playlist.Update(ctx, toUpdate[i]); err != nil {
@@ -78,7 +72,7 @@ func (c *client) playlistSync(ctx context.Context, user model.User) error {
 
 	// Find the playlists that need to be deleted
 	for _, playlistDB := range playlistsDB {
-		_, ok := utils.SliceFind(playlistsSpotify, func(p playlist) bool { return p.model.SpotifyID == playlistDB.SpotifyID })
+		_, ok := utils.SliceFind(playlistsSpotify, func(p model.Playlist) bool { return p.SpotifyID == playlistDB.SpotifyID })
 		if !ok {
 			// Playlist no longer exists in the user's account
 			// So delete it
@@ -95,8 +89,54 @@ func (c *client) playlistSync(ctx context.Context, user model.User) error {
 	return nil
 }
 
+func (c *client) playlistCoverSync(ctx context.Context, user model.User) error {
+	playlists, err := c.playlist.GetByUserPopulated(ctx, user.ID)
+	if err != nil {
+		return err
+	}
+	if playlists == nil {
+		return nil
+	}
+
+	for _, playlist := range playlists {
+		if playlist.CoverURL == "" {
+			continue
+		}
+
+		cover, err := c.getCover(*playlist)
+		if err != nil {
+			return err
+		}
+		if len(cover) == 0 {
+			continue
+		}
+
+		oldCover := []byte{}
+		if playlist.CoverID != "" {
+			oldCover, err = storage.S.Get(playlist.CoverID)
+			if err != nil {
+				return fmt.Errorf("get cover for %+v | %w", *playlist, err)
+			}
+		}
+
+		if bytes.Equal(cover, oldCover) {
+			continue
+		}
+
+		playlist.CoverID = uuid.NewString()
+		if err := storage.S.Set(playlist.CoverID, cover, 0); err != nil {
+			return fmt.Errorf("store new cover %+v | %w", *playlist, err)
+		}
+
+		if err := c.playlist.Update(ctx, *playlist); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // playlistTrackSync brings the local database up to date with the songs for each playlist
-// nolint:gocognit // It's fine
 func (c *client) playlistTrackSync(ctx context.Context, user model.User) error {
 	playlists, err := c.playlist.GetByUserPopulated(ctx, user.ID)
 	if err != nil {
@@ -112,7 +152,7 @@ func (c *client) playlistTrackSync(ctx context.Context, user model.User) error {
 			return err
 		}
 
-		tracksSpotify, err := c.playlistGetTracksAll(ctx, user, *playlist)
+		tracksSpotify, err := c.playlistGetTrackAll(ctx, user, *playlist)
 		if err != nil {
 			return err
 		}
@@ -134,29 +174,13 @@ func (c *client) playlistTrackSync(ctx context.Context, user model.User) error {
 
 		// Do the db operations
 		for _, track := range toCreate {
-			trackDB, err := c.track.GetBySpotify(ctx, track.SpotifyID)
-			if err != nil {
+			if err := c.trackCheck(ctx, &track); err != nil {
 				return err
-			}
-
-			if trackDB == nil {
-				// We don't have the track yet
-				if err := c.track.Create(ctx, &track); err != nil {
-					return err
-				}
-				trackDB = &model.Track{
-					ID: track.ID,
-				}
-			} else if !trackDB.Equal(track) {
-				// Track is not up to date
-				if err := c.track.UpdateBySpotify(ctx, track); err != nil {
-					return err
-				}
 			}
 
 			if err := c.playlist.CreateTrack(ctx, &model.PlaylistTrack{
 				PlaylistID: playlist.ID,
-				TrackID:    trackDB.ID,
+				TrackID:    track.ID,
 			}); err != nil {
 				return err
 			}
@@ -310,7 +334,7 @@ func (c *client) linkSyncOne(ctx context.Context, user model.User, source, targe
 		}
 	}
 
-	if err := c.playlistAddTracksAll(ctx, user, target, toAdd); err != nil {
+	if err := c.playlistPostTrackAll(ctx, user, target, toAdd); err != nil {
 		return err
 	}
 

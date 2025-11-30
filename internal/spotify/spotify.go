@@ -67,6 +67,10 @@ func (c *client) Sync(ctx context.Context, user model.User) error {
 		return fmt.Errorf("sync playlists for user %+v | %w", user, err)
 	}
 
+	if err := c.playlistCoverSync(ctx, user); err != nil {
+		return fmt.Errorf("sync playlist covers for user %+v | %w", user, err)
+	}
+
 	if err := c.playlistTrackSync(ctx, user); err != nil {
 		return fmt.Errorf("sync playlist tracks for user %+v | %w", user, err)
 	}

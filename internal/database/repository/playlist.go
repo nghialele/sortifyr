@@ -59,6 +59,7 @@ func (p *Playlist) Create(ctx context.Context, playlist *model.Playlist) error {
 		TrackAmount:   int32(playlist.TrackAmount),
 		Collaborative: playlist.Collaborative,
 		CoverID:       pgtype.Text{String: playlist.CoverID, Valid: playlist.CoverID != ""},
+		CoverUrl:      pgtype.Text{String: playlist.CoverURL, Valid: playlist.CoverURL != ""},
 	})
 	if err != nil {
 		return fmt.Errorf("create playlist %+v | %w", *playlist, err)
@@ -93,6 +94,7 @@ func (p *Playlist) Update(ctx context.Context, playlist model.Playlist) error {
 		TrackAmount:   int32(playlist.TrackAmount),
 		Collaborative: playlist.Collaborative,
 		CoverID:       pgtype.Text{String: playlist.CoverID, Valid: playlist.CoverID != ""},
+		CoverUrl:      pgtype.Text{String: playlist.CoverURL, Valid: playlist.CoverURL != ""},
 	}); err != nil {
 		return fmt.Errorf("update playlist %+v | %w", playlist, err)
 	}

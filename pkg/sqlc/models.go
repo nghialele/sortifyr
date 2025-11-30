@@ -40,6 +40,7 @@ type Playlist struct {
 	TrackAmount   int32
 	Collaborative bool
 	CoverID       pgtype.Text
+	CoverUrl      pgtype.Text
 }
 
 type PlaylistTrack struct {
