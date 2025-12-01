@@ -11,7 +11,7 @@ import (
 	"github.com/topvennie/spotify_organizer/pkg/utils"
 )
 
-func (c *client) playlistSync(ctx context.Context, user model.User) error {
+func (c *client) syncPlaylist(ctx context.Context, user model.User) error {
 	playlistsDB, err := c.playlist.GetByUserPopulated(ctx, user.ID)
 	if err != nil {
 		return err
@@ -89,7 +89,7 @@ func (c *client) playlistSync(ctx context.Context, user model.User) error {
 	return nil
 }
 
-func (c *client) playlistCoverSync(ctx context.Context, user model.User) error {
+func (c *client) syncPlaylistCover(ctx context.Context, user model.User) error {
 	playlists, err := c.playlist.GetByUserPopulated(ctx, user.ID)
 	if err != nil {
 		return err
@@ -136,8 +136,8 @@ func (c *client) playlistCoverSync(ctx context.Context, user model.User) error {
 	return nil
 }
 
-// playlistTrackSync brings the local database up to date with the songs for each playlist
-func (c *client) playlistTrackSync(ctx context.Context, user model.User) error {
+// syncPlaylistTrack brings the local database up to date with the songs for each playlist
+func (c *client) syncPlaylistTrack(ctx context.Context, user model.User) error {
 	playlists, err := c.playlist.GetByUserPopulated(ctx, user.ID)
 	if err != nil {
 		return err
@@ -199,49 +199,7 @@ func (c *client) playlistTrackSync(ctx context.Context, user model.User) error {
 	return nil
 }
 
-// userSync updates the information for every relevant user (for the given user)
-func (c *client) userSync(ctx context.Context, user model.User) error {
-	// Get all relevant users
-	playlists, err := c.playlist.GetByUserPopulated(ctx, user.ID)
-	if err != nil {
-		return err
-	}
-	if playlists == nil {
-		return nil
-	}
-
-	usersDB := utils.SliceMap(playlists, func(p *model.Playlist) model.User { return p.Owner })
-	usersDB = utils.SliceUnique(usersDB)
-
-	// Get all spotify users
-	usersSpotify := make([]model.User, 0, len(usersDB))
-	for _, userDB := range usersDB {
-		newUser, err := c.userGet(ctx, user, userDB)
-		if err != nil {
-			return err
-		}
-
-		usersSpotify = append(usersSpotify, newUser)
-	}
-
-	toUpdate := make([]model.User, 0)
-
-	for _, userSpotify := range usersSpotify {
-		if _, ok := utils.SliceFind(usersDB, func(u model.User) bool { return u.Equal(userSpotify) }); !ok {
-			toUpdate = append(toUpdate, userSpotify)
-		}
-	}
-
-	for _, user := range toUpdate {
-		if err := c.user.Update(ctx, user); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (c *client) linkSync(ctx context.Context, user model.User) error {
+func (c *client) syncLink(ctx context.Context, user model.User) error {
 	directories, err := c.directory.GetByUserPopulated(ctx, user.ID)
 	if err != nil {
 		return err
@@ -301,7 +259,7 @@ func (c *client) linkSync(ctx context.Context, user model.User) error {
 
 		for i := range sources {
 			for j := range targets {
-				if err := c.linkSyncOne(ctx, user, sources[i], targets[j]); err != nil {
+				if err := c.syncLinkOne(ctx, user, sources[i], targets[j]); err != nil {
 					return err
 				}
 			}
@@ -311,7 +269,7 @@ func (c *client) linkSync(ctx context.Context, user model.User) error {
 	return nil
 }
 
-func (c *client) linkSyncOne(ctx context.Context, user model.User, source, target model.Playlist) error {
+func (c *client) syncLinkOne(ctx context.Context, user model.User, source, target model.Playlist) error {
 	if source.Equal(target) {
 		return nil
 	}
@@ -336,6 +294,48 @@ func (c *client) linkSyncOne(ctx context.Context, user model.User, source, targe
 
 	if err := c.playlistPostTrackAll(ctx, user, target, toAdd); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// syncUser updates the information for every relevant user (for the given user)
+func (c *client) syncUser(ctx context.Context, user model.User) error {
+	// Get all relevant users
+	playlists, err := c.playlist.GetByUserPopulated(ctx, user.ID)
+	if err != nil {
+		return err
+	}
+	if playlists == nil {
+		return nil
+	}
+
+	usersDB := utils.SliceMap(playlists, func(p *model.Playlist) model.User { return p.Owner })
+	usersDB = utils.SliceUnique(usersDB)
+
+	// Get all spotify users
+	usersSpotify := make([]model.User, 0, len(usersDB))
+	for _, userDB := range usersDB {
+		newUser, err := c.userGet(ctx, user, userDB)
+		if err != nil {
+			return err
+		}
+
+		usersSpotify = append(usersSpotify, newUser)
+	}
+
+	toUpdate := make([]model.User, 0)
+
+	for _, userSpotify := range usersSpotify {
+		if _, ok := utils.SliceFind(usersDB, func(u model.User) bool { return u.Equal(userSpotify) }); !ok {
+			toUpdate = append(toUpdate, userSpotify)
+		}
+	}
+
+	for _, user := range toUpdate {
+		if err := c.user.Update(ctx, user); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -3,6 +3,11 @@ SELECT *
 FROM users
 WHERE id = $1;
 
+-- name: UserGetActualAll :many
+SELECT *
+FROM users
+WHERE email != '';
+
 -- name: UserGetByUID :one
 SELECT *
 FROM users

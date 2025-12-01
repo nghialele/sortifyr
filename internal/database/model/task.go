@@ -20,7 +20,6 @@ type Task struct {
 	UserID   int // ID of the user that started the task. 0 if it was scheduled
 	RunAt    time.Time
 	Result   TaskResult
-	Message  string
 	Error    error
 	Duration time.Duration
 
@@ -35,10 +34,6 @@ func TaskModel(task sqlc.Task, taskRun sqlc.TaskRun) *Task {
 	if taskRun.UserID.Valid {
 		userID = int(taskRun.UserID.Int32)
 	}
-	message := ""
-	if taskRun.Message.Valid {
-		message = taskRun.Message.String
-	}
 	var err error
 	if taskRun.Error.Valid {
 		err = errors.New(taskRun.Error.String)
@@ -49,7 +44,6 @@ func TaskModel(task sqlc.Task, taskRun sqlc.TaskRun) *Task {
 		UserID:   userID,
 		RunAt:    taskRun.RunAt.Time,
 		Result:   TaskResult(taskRun.Result),
-		Message:  message,
 		Error:    err,
 		Duration: time.Duration(taskRun.Duration),
 		UID:      task.Uid,

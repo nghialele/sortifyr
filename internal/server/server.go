@@ -63,10 +63,10 @@ func New(service service.Service, pool *pgxpool.Pool) *Server {
 	protectedAPI := api.Use(middlewares.ProtectedRoute)
 
 	routers.NewUser(protectedAPI, service)
-	routers.NewSetting(protectedAPI, service)
 	routers.NewPlaylist(protectedAPI, service)
 	routers.NewDirectory(protectedAPI, service)
 	routers.NewLink(protectedAPI, service)
+	routers.NewTask(protectedAPI, service)
 
 	// Static files if served in production
 	if !config.IsDev() {

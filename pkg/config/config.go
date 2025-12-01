@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
@@ -72,6 +73,19 @@ func GetBool(key string) bool {
 func GetDefaultBool(key string, defaultVal bool) bool {
 	viper.SetDefault(key, defaultVal)
 	return GetBool(key)
+}
+
+// GetDuration returns the value of the key as a duration
+func GetDuration(key string) time.Duration {
+	bindEnv(key)
+	return viper.GetDuration(key) * time.Second
+}
+
+// GetDefaultDuration returns the value of the in time.Duration or a default value
+// The default value should be the amount of seconds and gets transformed to a time.Duration
+func GetDefaultDuration(key string, defaultVal int) time.Duration {
+	viper.SetDefault(key, defaultVal)
+	return GetDuration(key)
 }
 
 func IsDev() bool {

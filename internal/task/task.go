@@ -39,7 +39,7 @@ type Task interface {
 	// The function that actually gets executed when it's time
 	// If *model.user != nil then it means that user triggered the execution
 	// It's up to the function to decide how to handle it
-	Func() func(context.Context, *model.User) (string, error)
+	Func() func(context.Context, *model.User) error
 	Ctx() context.Context
 }
 
@@ -52,22 +52,21 @@ const (
 
 // Stat contains the information about a current running or scheduled task
 type Stat struct {
-	TaskUID     string
-	Name        string
-	Status      Status
-	NextRun     time.Time
-	LastStatus  model.TaskResult
-	LastRun     time.Time
-	LastMessage string
-	LastError   error
-	Interval    time.Duration
+	TaskUID    string
+	Name       string
+	Status     Status
+	NextRun    time.Time
+	LastStatus model.TaskResult
+	LastRun    time.Time
+	LastError  error
+	Interval   time.Duration
 }
 
 type internalTask struct {
 	uid      string
 	name     string
 	interval time.Duration
-	fn       func(context.Context, *model.User) (string, error)
+	fn       func(context.Context, *model.User) error
 	ctx      context.Context
 }
 
@@ -78,7 +77,7 @@ var _ Task = (*internalTask)(nil)
 // It supports an optional context, if none is given the background context is used
 // Logs (info level) when a task starts and ends
 // Logs (error level) any error that occurs during the task execution
-func NewTask(uid, name string, interval time.Duration, fn func(context.Context, *model.User) (string, error), ctx ...context.Context) Task {
+func NewTask(uid, name string, interval time.Duration, fn func(context.Context, *model.User) error, ctx ...context.Context) Task {
 	c := context.Background()
 	if len(ctx) > 0 {
 		c = ctx[0]
@@ -105,18 +104,18 @@ func (t *internalTask) Interval() time.Duration {
 	return t.interval
 }
 
-func (t *internalTask) Func() func(context.Context, *model.User) (string, error) {
-	return func(ctx context.Context, user *model.User) (string, error) {
+func (t *internalTask) Func() func(context.Context, *model.User) error {
+	return func(ctx context.Context, user *model.User) error {
 		zap.S().Infof("Task running %s", t.name)
 
-		msg, err := t.fn(ctx, user)
-		if err != nil {
+		if err := t.fn(ctx, user); err != nil {
 			zap.S().Errorf("Task %s failed | %v", t.name, err)
-		} else {
-			zap.S().Infof("Task finished %s", t.name)
+			return err
 		}
 
-		return msg, err
+		zap.S().Infof("Task finished %s", t.name)
+
+		return nil
 	}
 }
 

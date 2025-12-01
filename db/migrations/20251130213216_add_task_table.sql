@@ -14,7 +14,6 @@ CREATE TABLE task_runs (
   user_id INTEGER REFERENCES users (id) ON DELETE CASCADE,
   run_at TIMESTAMPTZ NOT NULL,
   result TASK_RESULT NOT NULL,
-  message TEXT,
   error TEXT,
   duration BIGINT NOT NULL
 );

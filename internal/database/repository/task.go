@@ -101,7 +101,6 @@ func (t *Task) CreateRun(ctx context.Context, task *model.Task) error {
 		UserID:   pgtype.Int4{Int32: int32(task.UserID), Valid: task.UserID != 0},
 		RunAt:    pgtype.Timestamptz{Time: task.RunAt, Valid: !task.RunAt.IsZero()},
 		Result:   sqlc.TaskResult(task.Result),
-		Message:  pgtype.Text{String: task.Message, Valid: task.Message != ""},
 		Error:    pgtype.Text{String: errStr, Valid: errStr != ""},
 		Duration: task.Duration.Nanoseconds(),
 	})

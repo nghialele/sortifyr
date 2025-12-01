@@ -18,7 +18,6 @@ type client struct {
 	directory repository.Directory
 	link      repository.Link
 	playlist  repository.Playlist
-	setting   repository.Setting
 	track     repository.Track
 	user      repository.User
 
@@ -40,11 +39,14 @@ func Init(repo repository.Repository) error {
 		directory:    *repo.NewDirectory(),
 		link:         *repo.NewLink(),
 		playlist:     *repo.NewPlaylist(),
-		setting:      *repo.NewSetting(),
 		track:        *repo.NewTrack(),
 		user:         *repo.NewUser(),
 		clientID:     clientID,
 		clientSecret: clientSecret,
+	}
+
+	if err := C.taskRegister(); err != nil {
+		return err
 	}
 
 	return nil
@@ -60,50 +62,4 @@ func (c *client) NewUser(ctx context.Context, user model.User, accessToken, refr
 	}
 
 	return nil
-}
-
-func (c *client) Sync(ctx context.Context, user model.User) error {
-	if err := c.playlistSync(ctx, user); err != nil {
-		return fmt.Errorf("sync playlists for user %+v | %w", user, err)
-	}
-
-	if err := c.playlistCoverSync(ctx, user); err != nil {
-		return fmt.Errorf("sync playlist covers for user %+v | %w", user, err)
-	}
-
-	if err := c.playlistTrackSync(ctx, user); err != nil {
-		return fmt.Errorf("sync playlist tracks for user %+v | %w", user, err)
-	}
-
-	if err := c.userSync(ctx, user); err != nil {
-		return fmt.Errorf("sync users for user %+v | %w", user, err)
-	}
-
-	if err := c.linkSync(ctx, user); err != nil {
-		return fmt.Errorf("sync links for user %+v | %w", user, err)
-	}
-
-	setting, err := c.setting.GetByUser(ctx, user.ID)
-	if err != nil {
-		return err
-	}
-	if setting == nil {
-		return fmt.Errorf("no setting found for user %+v", user)
-	}
-
-	setting.LastUpdate = time.Now()
-
-	if err := c.setting.Update(ctx, *setting); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func accessKey(user model.User) string {
-	return user.UID + ":spotify:access_token"
-}
-
-func refreshKey(user model.User) string {
-	return user.UID + ":spotify:refresh_token"
 }

@@ -34,6 +34,18 @@ func (u *User) GetByID(ctx context.Context, id int) (*model.User, error) {
 	return model.UserModel(user), nil
 }
 
+func (u *User) GetActualAll(ctx context.Context) ([]*model.User, error) {
+	users, err := u.repo.queries(ctx).UserGetActualAll(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get all actual users %w", err)
+	}
+
+	return utils.SliceMap(users, model.UserModel), nil
+}
+
 func (u *User) GetByUID(ctx context.Context, uid string) (*model.User, error) {
 	user, err := u.repo.queries(ctx).UserGetByUID(ctx, uid)
 	if err != nil {

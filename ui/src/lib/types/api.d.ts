@@ -10,10 +10,6 @@ export namespace API {
     email: string;
   }
 
-  export interface Setting extends Base {
-    last_update?: string;
-  }
-
   export interface Playlist extends Base {
     spotify_id: string;
     owner?: User;

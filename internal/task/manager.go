@@ -17,12 +17,11 @@ import (
 var Manager *manager
 
 type job struct {
-	task        model.Task
-	status      Status
-	interval    time.Duration
-	lastStatus  model.TaskResult
-	lastMessage string
-	lastError   error
+	task       model.Task
+	status     Status
+	interval   time.Duration
+	lastStatus model.TaskResult
+	lastError  error
 
 	users []model.User // If it's not empty then an user triggered it and is waiting on it
 }
@@ -112,13 +111,12 @@ func (m *manager) Add(ctx context.Context, newTask Task) error {
 	}
 
 	m.jobs[task.UID] = job{
-		task:        *task,
-		status:      Waiting,
-		interval:    newTask.Interval(),
-		lastStatus:  model.TaskSuccess,
-		lastMessage: "",
-		lastError:   nil,
-		users:       []model.User{},
+		task:       *task,
+		status:     Waiting,
+		interval:   newTask.Interval(),
+		lastStatus: model.TaskSuccess,
+		lastError:  nil,
+		users:      []model.User{},
 	}
 
 	return nil
@@ -179,15 +177,14 @@ func (m *manager) Tasks() ([]Stat, error) {
 			}
 
 			stats = append(stats, Stat{
-				TaskUID:     j.task.UID,
-				Name:        j.task.Name,
-				Status:      j.status,
-				NextRun:     nextRun,
-				LastStatus:  j.lastStatus,
-				LastRun:     lastRun,
-				LastMessage: j.lastMessage,
-				LastError:   j.lastError,
-				Interval:    j.interval,
+				TaskUID:    j.task.UID,
+				Name:       j.task.Name,
+				Status:     j.status,
+				NextRun:    nextRun,
+				LastStatus: j.lastStatus,
+				LastRun:    lastRun,
+				LastError:  j.lastError,
+				Interval:   j.interval,
 			})
 		}
 	}
@@ -220,7 +217,7 @@ func (m *manager) wrap(task Task) func(context.Context) {
 
 		// Run task
 		start := time.Now()
-		message, err := task.Func()(ctx, user)
+		err := task.Func()(ctx, user)
 		end := time.Now()
 
 		// Save result
@@ -238,7 +235,6 @@ func (m *manager) wrap(task Task) func(context.Context) {
 			UserID:   userID,
 			RunAt:    time.Now(),
 			Result:   result,
-			Message:  message,
 			Error:    err,
 			Duration: end.Sub(start),
 		}
@@ -253,7 +249,6 @@ func (m *manager) wrap(task Task) func(context.Context) {
 		info = m.jobs[task.UID()]
 		info.status = Waiting
 		info.lastStatus = result
-		info.lastMessage = message
 		info.lastError = err
 		m.jobs[task.UID()] = info
 	}

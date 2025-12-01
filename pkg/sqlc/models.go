@@ -94,12 +94,6 @@ type PlaylistTrack struct {
 	TrackID    int32
 }
 
-type Setting struct {
-	ID          int32
-	UserID      int32
-	LastUpdated pgtype.Timestamptz
-}
-
 type Task struct {
 	Uid    string
 	Name   string
@@ -112,7 +106,6 @@ type TaskRun struct {
 	UserID   pgtype.Int4
 	RunAt    pgtype.Timestamptz
 	Result   TaskResult
-	Message  pgtype.Text
 	Error    pgtype.Text
 	Duration int64
 }

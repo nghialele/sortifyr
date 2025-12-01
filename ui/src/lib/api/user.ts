@@ -27,17 +27,3 @@ export const useUserLogout = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["user"] })
   })
 }
-
-
-export const useSync = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: () => apiPost(`${ENDPOINT_USER}/sync`),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["setting"] })
-      queryClient.invalidateQueries({ queryKey: ["playlist"] })
-    },
-    throwOnError: true,
-  })
-}

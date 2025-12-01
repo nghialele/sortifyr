@@ -2,12 +2,10 @@ package service
 
 import (
 	"context"
-	"errors"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/topvennie/spotify_organizer/internal/database/repository"
 	"github.com/topvennie/spotify_organizer/internal/server/dto"
-	"github.com/topvennie/spotify_organizer/internal/spotify"
 	"go.uber.org/zap"
 )
 
@@ -70,26 +68,4 @@ func (u *User) Update(ctx context.Context, userSave dto.User) (dto.User, error) 
 	}
 
 	return dto.UserDTO(user), nil
-}
-
-func (u *User) Sync(ctx context.Context, userID int) error {
-	user, err := u.user.GetByID(ctx, userID)
-	if err != nil {
-		zap.S().Error(err)
-		return fiber.ErrInternalServerError
-	}
-	if user == nil {
-		return fiber.ErrUnauthorized
-	}
-
-	if err := spotify.C.Sync(ctx, *user); err != nil {
-		if errors.Is(err, spotify.ErrUnauthorized) {
-			return fiber.ErrUnauthorized
-		}
-
-		zap.S().Error(err)
-		return fiber.ErrInternalServerError
-	}
-
-	return nil
 }

@@ -55,6 +55,38 @@ func (q *Queries) UserGet(ctx context.Context, id int32) (User, error) {
 	return i, err
 }
 
+const userGetActualAll = `-- name: UserGetActualAll :many
+SELECT id, uid, name, display_name, email
+FROM users
+WHERE email != ''
+`
+
+func (q *Queries) UserGetActualAll(ctx context.Context) ([]User, error) {
+	rows, err := q.db.Query(ctx, userGetActualAll)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Uid,
+			&i.Name,
+			&i.DisplayName,
+			&i.Email,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const userGetAllByID = `-- name: UserGetAllByID :many
 SELECT id, uid, name, display_name, email
 FROM users

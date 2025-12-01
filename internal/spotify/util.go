@@ -32,7 +32,6 @@ func (c *client) userCheck(ctx context.Context, userUID string) error {
 	return nil
 }
 
-// TODO: Check if works
 // trackCheck creates or updates the track if needed
 func (c *client) trackCheck(ctx context.Context, track *model.Track) error {
 	trackDB, err := c.track.GetBySpotify(ctx, track.SpotifyID)
@@ -91,4 +90,12 @@ func (c *client) getCover(playlist model.Playlist) ([]byte, error) {
 	}
 
 	return webp, nil
+}
+
+func accessKey(user model.User) string {
+	return user.UID + ":spotify:access_token"
+}
+
+func refreshKey(user model.User) string {
+	return user.UID + ":spotify:refresh_token"
 }
