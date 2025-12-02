@@ -1,6 +1,6 @@
 package dto
 
-import "github.com/topvennie/spotify_organizer/internal/database/model"
+import "github.com/topvennie/sortifyr/internal/database/model"
 
 type User struct {
 	ID          int    `json:"id"`

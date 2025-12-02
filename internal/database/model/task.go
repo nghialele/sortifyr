@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/topvennie/spotify_organizer/pkg/sqlc"
+	"github.com/topvennie/sortifyr/pkg/sqlc"
 )
 
 type TaskResult string

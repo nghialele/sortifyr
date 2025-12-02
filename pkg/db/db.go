@@ -5,7 +5,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/topvennie/spotify_organizer/pkg/sqlc"
+	"github.com/topvennie/sortifyr/pkg/sqlc"
 )
 
 type DB interface {

@@ -3,8 +3,8 @@ package dto
 import (
 	"time"
 
-	"github.com/topvennie/spotify_organizer/internal/database/model"
-	"github.com/topvennie/spotify_organizer/internal/task"
+	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/internal/task"
 )
 
 type TaskHistory struct {

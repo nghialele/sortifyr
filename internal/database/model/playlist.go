@@ -1,7 +1,7 @@
 package model
 
 import (
-	"github.com/topvennie/spotify_organizer/pkg/sqlc"
+	"github.com/topvennie/sortifyr/pkg/sqlc"
 )
 
 type Playlist struct {

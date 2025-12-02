@@ -9,10 +9,10 @@ import (
 	"github.com/markbates/goth"
 	auth_spotify "github.com/markbates/goth/providers/spotify"
 	"github.com/shareed2k/goth_fiber"
-	"github.com/topvennie/spotify_organizer/internal/server/dto"
-	"github.com/topvennie/spotify_organizer/internal/server/service"
-	"github.com/topvennie/spotify_organizer/internal/spotify"
-	"github.com/topvennie/spotify_organizer/pkg/config"
+	"github.com/topvennie/sortifyr/internal/server/dto"
+	"github.com/topvennie/sortifyr/internal/server/service"
+	"github.com/topvennie/sortifyr/internal/spotify"
+	"github.com/topvennie/sortifyr/pkg/config"
 	"go.uber.org/zap"
 )
 

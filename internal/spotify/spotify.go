@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/topvennie/spotify_organizer/internal/database/model"
-	"github.com/topvennie/spotify_organizer/internal/database/repository"
-	"github.com/topvennie/spotify_organizer/internal/task"
-	"github.com/topvennie/spotify_organizer/pkg/config"
-	"github.com/topvennie/spotify_organizer/pkg/redis"
-	"go.uber.org/zap"
+	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/internal/database/repository"
+	"github.com/topvennie/sortifyr/pkg/config"
+	"github.com/topvennie/sortifyr/pkg/redis"
 )
 
 var ErrUnauthorized = errors.New("access and refresh token expired")
@@ -61,18 +59,6 @@ func (c *client) NewUser(ctx context.Context, user model.User, accessToken, refr
 
 	if _, err := redis.C.Set(ctx, refreshKey(user), refreshToken, 0).Result(); err != nil {
 		return fmt.Errorf("set refresh token %w", err)
-	}
-
-	if err := task.Manager.RunByUID(taskPlaylistUID, user); err != nil {
-		zap.S().Fatalf("%v", err)
-	}
-
-	if err := task.Manager.RunByUID(taskTrackUID, user); err != nil {
-		zap.S().Fatalf("%v", err)
-	}
-
-	if err := task.Manager.RunByUID(taskUserUID, user); err != nil {
-		zap.S().Fatalf("%v", err)
 	}
 
 	return nil

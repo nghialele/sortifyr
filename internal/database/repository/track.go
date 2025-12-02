@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/topvennie/spotify_organizer/internal/database/model"
-	"github.com/topvennie/spotify_organizer/pkg/sqlc"
-	"github.com/topvennie/spotify_organizer/pkg/utils"
+	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/pkg/sqlc"
+	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
 type Track struct {

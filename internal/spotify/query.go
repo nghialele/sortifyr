@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/topvennie/spotify_organizer/internal/database/model"
-	"github.com/topvennie/spotify_organizer/pkg/redis"
+	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/pkg/redis"
 	"go.uber.org/zap"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/topvennie/spotify_organizer/internal/database/repository"
-	"github.com/topvennie/spotify_organizer/internal/server/dto"
+	"github.com/topvennie/sortifyr/internal/database/repository"
+	"github.com/topvennie/sortifyr/internal/server/dto"
 	"go.uber.org/zap"
 )
 

@@ -4,8 +4,8 @@ package repository
 import (
 	"context"
 
-	"github.com/topvennie/spotify_organizer/pkg/db"
-	"github.com/topvennie/spotify_organizer/pkg/sqlc"
+	"github.com/topvennie/sortifyr/pkg/db"
+	"github.com/topvennie/sortifyr/pkg/sqlc"
 )
 
 type Repository struct {

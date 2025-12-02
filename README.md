@@ -1,4 +1,4 @@
-# Spotify organizer
+# Sortifyr
 
 A web application to help organize and automate your Spotify playlists.
 
@@ -131,7 +131,7 @@ docker compose up
 
 ### Manual Setup (Advanced)
 
-The container image is published as: `ghcr.io/topvennie/spotify_organizer`.
+The container image is published as: `ghcr.io/topvennie/sortifyr`.
 
 Required additional services:
 

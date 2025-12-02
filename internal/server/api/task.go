@@ -2,9 +2,9 @@ package api
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/topvennie/spotify_organizer/internal/database/model"
-	"github.com/topvennie/spotify_organizer/internal/server/dto"
-	"github.com/topvennie/spotify_organizer/internal/server/service"
+	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/internal/server/dto"
+	"github.com/topvennie/sortifyr/internal/server/service"
 )
 
 type Task struct {

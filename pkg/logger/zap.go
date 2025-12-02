@@ -2,7 +2,7 @@
 package logger
 
 import (
-	"github.com/topvennie/spotify_organizer/pkg/config"
+	"github.com/topvennie/sortifyr/pkg/config"
 	"go.uber.org/zap"
 )
 

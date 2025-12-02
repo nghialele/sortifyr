@@ -5,7 +5,7 @@ import (
 	"context"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/topvennie/spotify_organizer/pkg/config"
+	"github.com/topvennie/sortifyr/pkg/config"
 )
 
 var (

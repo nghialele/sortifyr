@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/topvennie/spotify_organizer/internal/server/service"
+	"github.com/topvennie/sortifyr/internal/server/service"
 )
 
 type User struct {

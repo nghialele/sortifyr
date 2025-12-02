@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/topvennie/spotify_organizer/internal/database/model"
+	"github.com/topvennie/sortifyr/internal/database/model"
 )
 
 type userResponse struct {

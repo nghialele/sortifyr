@@ -31,7 +31,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          IMAGE=ghcr.io/topvennie/spotify_organizer
+          IMAGE=ghcr.io/topvennie/sortifyr
           docker build . -t $IMAGE:pr-${{ github.sha }}
           if [ "${{ github.event_name }}" == "push" ]; then
             docker tag $IMAGE:pr-${{ github.sha }} $IMAGE:latest
@@ -39,4 +39,4 @@ jobs:
 
       - name: Push Docker image
         if: github.event_name == 'push'
-        run: docker push --all-tags ghcr.io/topvennie/spotify_organizer
+        run: docker push --all-tags ghcr.io/topvennie/sortifyr

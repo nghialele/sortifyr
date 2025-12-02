@@ -6,9 +6,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/topvennie/spotify_organizer/internal/database/model"
-	"github.com/topvennie/spotify_organizer/pkg/storage"
-	"github.com/topvennie/spotify_organizer/pkg/utils"
+	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/pkg/storage"
+	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
 func (c *client) syncPlaylist(ctx context.Context, user model.User) (string, error) {

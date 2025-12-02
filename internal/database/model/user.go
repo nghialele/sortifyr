@@ -1,7 +1,7 @@
 // Package model contains all databank models
 package model
 
-import "github.com/topvennie/spotify_organizer/pkg/sqlc"
+import "github.com/topvennie/sortifyr/pkg/sqlc"
 
 type User struct {
 	ID          int

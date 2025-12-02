@@ -7,8 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/topvennie/spotify_organizer/pkg/config"
-	"github.com/topvennie/spotify_organizer/pkg/sqlc"
+	"github.com/topvennie/sortifyr/pkg/config"
+	"github.com/topvennie/sortifyr/pkg/sqlc"
 )
 
 type psql struct {
@@ -27,7 +27,7 @@ func NewPSQL() (DB, error) {
 
 	pgConfig.ConnConfig.Host = config.GetDefaultString("db.host", "db")
 	pgConfig.ConnConfig.Port = config.GetDefaultUint16("db.port", 5432)
-	pgConfig.ConnConfig.Database = config.GetDefaultString("db.database", "spotify_organizer")
+	pgConfig.ConnConfig.Database = config.GetDefaultString("db.database", "sortifyr")
 	pgConfig.ConnConfig.User = config.GetDefaultString("db.user", "postgres")
 	pgConfig.ConnConfig.Password = config.GetDefaultString("db.password", "postgres")
 

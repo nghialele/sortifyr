@@ -2,7 +2,7 @@ services:
   db:
     image: postgres:16
     environment:
-      POSTGRES_DB: spotify_organizer
+      POSTGRES_DB: sortifyr
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     healthcheck:
@@ -37,8 +37,8 @@ services:
     volumes:
       - minio_data:/data
 
-  spotify_organizer:
-    image: ghcr.io/topvennie/spotify_organizer:latest
+  sortifyr:
+    image: ghcr.io/topvennie/sortifyr:latest
     env_file: .env
     ports:
       - 8000:8000

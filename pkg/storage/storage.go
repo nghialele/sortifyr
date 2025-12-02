@@ -9,7 +9,7 @@ import (
 	"github.com/gofiber/storage/minio"
 	"github.com/gofiber/storage/postgres/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/topvennie/spotify_organizer/pkg/config"
+	"github.com/topvennie/sortifyr/pkg/config"
 )
 
 var S fiber.Storage
@@ -21,7 +21,7 @@ func New(pool *pgxpool.Pool) error {
 
 	case "minio":
 		S = minio.New(minio.Config{
-			Bucket:   config.GetDefaultString("minio.bucket", "spotify"),
+			Bucket:   config.GetDefaultString("minio.bucket", "sortifyr"),
 			Endpoint: config.GetDefaultString("minio.endpoint", "minio:9000"),
 			Secure:   config.GetDefaultBool("minio.secure", false),
 			Credentials: minio.Credentials{
@@ -33,7 +33,7 @@ func New(pool *pgxpool.Pool) error {
 	case "postgres":
 		S = postgres.New(postgres.Config{
 			DB:         pool,
-			Table:      "spotify_organizer_files",
+			Table:      "sortifyr_files",
 			Reset:      false,
 			GCInterval: 10 * time.Second,
 		})

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/topvennie/spotify_organizer/internal/database/model"
-	"github.com/topvennie/spotify_organizer/internal/task"
-	"github.com/topvennie/spotify_organizer/pkg/config"
+	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/internal/task"
+	"github.com/topvennie/sortifyr/pkg/config"
 )
 
 const (

@@ -4,7 +4,7 @@ package service
 import (
 	"context"
 
-	"github.com/topvennie/spotify_organizer/internal/database/repository"
+	"github.com/topvennie/sortifyr/internal/database/repository"
 )
 
 type Service struct {

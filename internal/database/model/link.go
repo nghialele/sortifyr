@@ -1,6 +1,6 @@
 package model
 
-import "github.com/topvennie/spotify_organizer/pkg/sqlc"
+import "github.com/topvennie/sortifyr/pkg/sqlc"
 
 type Link struct {
 	ID                int

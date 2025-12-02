@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
-	"github.com/topvennie/spotify_organizer/internal/database/model"
-	"github.com/topvennie/spotify_organizer/internal/database/repository"
-	"github.com/topvennie/spotify_organizer/pkg/utils"
+	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/internal/database/repository"
+	"github.com/topvennie/sortifyr/pkg/utils"
 	"go.uber.org/zap"
 )
 

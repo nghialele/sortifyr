@@ -11,10 +11,10 @@ import (
 	"github.com/gofiber/storage/postgres/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/shareed2k/goth_fiber"
-	routers "github.com/topvennie/spotify_organizer/internal/server/api"
-	"github.com/topvennie/spotify_organizer/internal/server/middlewares"
-	"github.com/topvennie/spotify_organizer/internal/server/service"
-	"github.com/topvennie/spotify_organizer/pkg/config"
+	routers "github.com/topvennie/sortifyr/internal/server/api"
+	"github.com/topvennie/sortifyr/internal/server/middlewares"
+	"github.com/topvennie/sortifyr/internal/server/service"
+	"github.com/topvennie/sortifyr/pkg/config"
 
 	"go.uber.org/zap"
 )
@@ -49,7 +49,7 @@ func New(service service.Service, pool *pgxpool.Pool) *Server {
 	})
 
 	goth_fiber.SessionStore = session.New(session.Config{
-		KeyLookup:      fmt.Sprintf("cookie:%s_session_id", config.GetDefaultString("app.name", "spotify_organizer")),
+		KeyLookup:      fmt.Sprintf("cookie:%s_session_id", config.GetDefaultString("app.name", "sortifyr")),
 		CookieHTTPOnly: true,
 		Storage:        sessionStore,
 		CookieSecure:   !config.IsDev(),

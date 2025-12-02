@@ -5,8 +5,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/topvennie/spotify_organizer/internal/database/model"
-	"github.com/topvennie/spotify_organizer/internal/database/repository"
+	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/internal/database/repository"
 	"go.uber.org/zap"
 )
 

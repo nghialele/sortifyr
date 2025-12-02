@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"github.com/topvennie/spotify_organizer/internal/database/model"
+	"github.com/topvennie/sortifyr/internal/database/model"
 )
 
 type Playlist struct {

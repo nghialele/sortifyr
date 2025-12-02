@@ -3,8 +3,8 @@ package model
 import (
 	"slices"
 
-	"github.com/topvennie/spotify_organizer/pkg/sqlc"
-	"github.com/topvennie/spotify_organizer/pkg/utils"
+	"github.com/topvennie/sortifyr/pkg/sqlc"
+	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
 type Directory struct {

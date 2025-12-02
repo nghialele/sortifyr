@@ -3,16 +3,16 @@ package main
 import (
 	"fmt"
 
-	"github.com/topvennie/spotify_organizer/internal/database/repository"
-	"github.com/topvennie/spotify_organizer/internal/server"
-	"github.com/topvennie/spotify_organizer/internal/server/service"
-	"github.com/topvennie/spotify_organizer/internal/spotify"
-	"github.com/topvennie/spotify_organizer/internal/task"
-	"github.com/topvennie/spotify_organizer/pkg/config"
-	"github.com/topvennie/spotify_organizer/pkg/db"
-	"github.com/topvennie/spotify_organizer/pkg/logger"
-	"github.com/topvennie/spotify_organizer/pkg/redis"
-	"github.com/topvennie/spotify_organizer/pkg/storage"
+	"github.com/topvennie/sortifyr/internal/database/repository"
+	"github.com/topvennie/sortifyr/internal/server"
+	"github.com/topvennie/sortifyr/internal/server/service"
+	"github.com/topvennie/sortifyr/internal/spotify"
+	"github.com/topvennie/sortifyr/internal/task"
+	"github.com/topvennie/sortifyr/pkg/config"
+	"github.com/topvennie/sortifyr/pkg/db"
+	"github.com/topvennie/sortifyr/pkg/logger"
+	"github.com/topvennie/sortifyr/pkg/redis"
+	"github.com/topvennie/sortifyr/pkg/storage"
 	"go.uber.org/zap"
 )
 
