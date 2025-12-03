@@ -45,6 +45,11 @@ func (r *Task) getTasks(c *fiber.Ctx) error {
 }
 
 func (r *Task) getHistory(c *fiber.Ctx) error {
+	userID, ok := c.Locals("userID").(int)
+	if !ok {
+		return fiber.ErrUnauthorized
+	}
+
 	uid := c.Query("uid")
 	resultStr := c.Query("result")
 
@@ -62,6 +67,7 @@ func (r *Task) getHistory(c *fiber.Ctx) error {
 	}
 
 	tasks, err := r.task.GetHistory(c.Context(), dto.TaskFilter{
+		UserID:  userID,
 		TaskUID: uid,
 		Result:  result,
 		Limit:   limit,

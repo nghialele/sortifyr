@@ -10,6 +10,7 @@ import (
 	"github.com/go-co-op/gocron/v2"
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/internal/database/repository"
+	"github.com/topvennie/sortifyr/pkg/config"
 	"github.com/topvennie/sortifyr/pkg/utils"
 	"go.uber.org/zap"
 )
@@ -35,6 +36,8 @@ type manager struct {
 
 	mu   sync.Mutex
 	jobs map[string]job
+
+	isDev bool
 }
 
 func newManager(repo repository.Repository) (*manager, error) {
@@ -50,6 +53,7 @@ func newManager(repo repository.Repository) (*manager, error) {
 		repoTask:  *repo.NewTask(),
 		repoUser:  *repo.NewUser(),
 		jobs:      make(map[string]job),
+		isDev:     config.IsDev(),
 	}
 
 	if err := manager.repoTask.SetInactiveAll(context.Background()); err != nil {
@@ -100,13 +104,20 @@ func (m *manager) Add(ctx context.Context, newTask Task) error {
 	defer m.mu.Unlock()
 
 	// Will immediately try to execute but it'll have to wait until the lock is released
-	if _, err := m.scheduler.NewJob(
-		gocron.DurationJob(newTask.Interval()),
-		gocron.NewTask(m.wrap(newTask)),
+	options := []gocron.JobOption{
 		gocron.WithName(task.UID),
 		gocron.WithContext(newTask.Ctx()),
 		gocron.WithTags(task.UID),
-		gocron.WithStartAt(gocron.WithStartImmediately()),
+	}
+	if !m.isDev {
+		// Only start tasks immediately in production environments
+		options = append(options, gocron.WithStartAt(gocron.WithStartImmediately()))
+	}
+
+	if _, err := m.scheduler.NewJob(
+		gocron.DurationJob(newTask.Interval()),
+		gocron.NewTask(m.wrap(newTask)),
+		options...,
 	); err != nil {
 		return fmt.Errorf("failed to add task %+v | %w", *task, err)
 	}

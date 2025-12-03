@@ -39,6 +39,10 @@ func TaskModel(task sqlc.Task, taskRun sqlc.TaskRun) *Task {
 	if taskRun.Error.Valid {
 		err = errors.New(taskRun.Error.String)
 	}
+	uid := task.Uid
+	if uid == "" {
+		uid = taskRun.TaskUid
+	}
 
 	return &Task{
 		ID:       int(taskRun.ID),
@@ -48,7 +52,7 @@ func TaskModel(task sqlc.Task, taskRun sqlc.TaskRun) *Task {
 		Message:  message,
 		Error:    err,
 		Duration: time.Duration(taskRun.Duration),
-		UID:      task.Uid,
+		UID:      uid,
 		Name:     task.Name,
 		Active:   task.Active,
 	}
