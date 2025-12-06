@@ -52,3 +52,9 @@ export function debounce<T extends (...args: unknown[]) => void>(fn: T, delay: n
     timer = setTimeout(() => fn(...args), delay);
   };
 }
+
+export function capitalize(text: string) {
+  if (text.length <= 1) return text.toUpperCase()
+
+  return text[0].toUpperCase() + text.slice(1)
+}

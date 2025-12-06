@@ -6,7 +6,7 @@ export enum TaskStatus {
 }
 
 export enum TaskResult {
-  Succes = "success",
+  Success = "success",
   Failed = "failed",
 }
 
@@ -19,7 +19,7 @@ export interface Task {
   lastRun?: Date;
   lastMessage?: string;
   lastError?: string;
-  interval?: number;
+  interval: number;
 }
 
 export interface TaskHistory {
@@ -27,6 +27,7 @@ export interface TaskHistory {
   name: string;
   result: TaskResult;
   runAt: Date;
+  message?: string;
   error?: string;
   duration: number;
 }
@@ -60,6 +61,7 @@ export const convertTaskHistory = (history: API.TaskHistory): TaskHistory => {
     name: history.name,
     result: history.result as TaskResult,
     runAt: new Date(history.run_at),
+    message: history.message,
     error: history.error,
     duration: history.duration,
   }

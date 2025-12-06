@@ -1,101 +1,115 @@
+import { Avatar } from "@/components/atoms/Avatar";
 import { LinkButton } from "@/components/atoms/LinkButton";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { AppShell, Burger, Button, Container, Group, Stack } from "@mantine/core";
+import { cn } from "@/lib/utils";
+import { ActionIcon, AppShell, Burger, Button, Divider, Group, ScrollArea, Stack } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { LinkProps } from "@tanstack/react-router";
-import { ComponentProps } from "react";
-import { FaArrowRightToBracket, FaMusic } from "react-icons/fa6";
+import { ComponentProps, ReactNode, useState } from "react";
+import { LuClock, LuFolderTree, LuLink2, LuListMusic, LuMusic, LuTriangle } from "react-icons/lu";
+
+type Props = ComponentProps<"div">
 
 type Route = {
   title: string;
+  icon: ReactNode;
   link: LinkProps;
 };
 
 const routes: Route[] = [
   {
     title: "Playlists",
+    icon: <LuListMusic className="size-5" />,
     link: { to: "/playlist" },
   },
   {
     title: "Directories",
+    icon: <LuFolderTree className="size-5" />,
     link: { to: "/directory" },
   },
   {
     title: "Links",
-    link: { to: "/links" },
+    icon: <LuLink2 className="size-5" />,
+    link: { to: "/link" },
+  },
+  {
+    title: "Background Tasks",
+    icon: <LuClock className="size-5" />,
+    link: { to: "/task" },
   }
 ];
 
-const NavLink = ({ route, closeNavbar }: { route: Route; closeNavbar?: () => void }) => {
+const NavLink = ({ route }: { route: Route }) => {
   return (
-    <div onClick={closeNavbar} className="w-fit">
-      <LinkButton
-        to={route.link.to}
-        activeProps={{ variant: "filled", c: "white" }}
-        variant="subtle"
-        size="md"
-        c="green.9"
-        tt="uppercase"
-        radius="md"
-        className="font-black tracking-wide"
-      >
-        {route.title}
-      </LinkButton>
-    </div>
+    <LinkButton
+      to={route.link.to}
+      activeProps={{ variant: "filled", bg: "primary.1" }}
+      variant="subtle"
+      size="md"
+      radius="md"
+      c="black"
+      fullWidth
+      justify="start"
+      leftSection={route.icon}
+    >
+      {route.title}
+    </LinkButton>
   );
 };
 
-export const NavLayout = ({ children, ...props }: ComponentProps<"div">) => {
-  const [opened, { close, toggle }] = useDisclosure();
+export const NavLayout = ({ className, children, ...props }: Props) => {
+  const [opened, { toggle }] = useDisclosure();
   const { user, logout } = useAuth()
+
+  const [userExpanded, setUserExpanded] = useState(false)
 
   return (
     <AppShell
-      header={{ height: 80 }}
-      navbar={{ width: 300, breakpoint: "md", collapsed: { desktop: true, mobile: !opened } }}
+      header={{ height: { base: 60, lg: 0 } }}
+      navbar={{ width: 300, breakpoint: "lg", collapsed: { mobile: !opened } }}
       padding="md"
     >
-      <AppShell.Header>
-        <Group justify="space-between" h="100%" px="md" wrap="nowrap" align="center">
-          <div className="flex items-center w-full">
-            <LinkButton to="/" variant="transparent" className="flex-1 flex items-center">
-              <div className="flex gap-4 items-center">
-                <FaMusic className="size-8" />
-                <p className="font-bold text-xl hidden md:block">Sortifyr</p>
-              </div>
-            </LinkButton>
-            <div className="flex-1 justify-center hidden md:flex">
-              <div className="flex items-center gap-4 bg-green-50 rounded-xl p-2">
-                {routes.map((route) => (
-                  <NavLink key={route.title} route={route} />
-                ))}
-              </div>
-            </div>
-            <div className="flex-1 justify-end hidden md:flex">
-              <Button variant="subtle" onClick={logout} tt="uppercase" size="md" rightSection={<FaArrowRightToBracket />} className="font-bold tracking-wide">
-                <div className="flex gap-2 items-center">
-                  {user?.name}
-                </div>
-              </Button>
-            </div>
-          </div>
-          <Burger opened={opened} onClick={toggle} hiddenFrom="md" size="sm" />
+      <AppShell.Header p="md" hiddenFrom="lg" className="bg-[#eef6f4]">
+        <Group justify="space-between">
+          <LuMusic color="black" className="size-8 stroke-[#3b4a49]" />
+          <Burger opened={opened} onClick={toggle} />
         </Group>
       </AppShell.Header>
-
-      <AppShell.Navbar p="md">
-        <Stack align="flex-start">
-          {routes.map((route) => (
-            <NavLink key={route.title} route={route} closeNavbar={close} />
-          ))}
-        </Stack>
+      <AppShell.Navbar p="lg" className="bg-[#eef6f4]">
+        <AppShell.Section p="md" h="92px" className="flex items-center">
+          <Group gap="md">
+            <LuMusic color="black" className="size-8 stroke-[#3b4a49]" />
+            <p className="font-bold text-2xl text-[#3b4a49]">Sortifyr</p>
+          </Group>
+        </AppShell.Section>
+        <AppShell.Section grow my="md" component={ScrollArea} px="md">
+          <Stack p="sm" gap="xs" className="rounded-xl bg-white">
+            {routes.map(r => <NavLink key={r.title} route={r} />)}
+          </Stack>
+        </AppShell.Section>
+        <AppShell.Section p="md">
+          <Stack p="sm" gap="xs" className="rounded-xl bg-white">
+            <Group>
+              <Avatar user={user} />
+              <p className="font-bold">{user?.name}</p>
+              <ActionIcon onClick={() => setUserExpanded(prev => !prev)} variant="light" color="black" size="sm" className="ml-auto">
+                <LuTriangle className={`fill-black w-2 ${userExpanded && "rotate-180"}`} />
+              </ActionIcon>
+            </Group>
+            {userExpanded && (
+              <>
+                <Divider mt="sm" />
+                <Button onClick={logout} radius="md" variant="subtle" pl={0} justify="start" className="text-muted">
+                  Log out
+                </Button>
+              </>
+            )}
+          </Stack>
+        </AppShell.Section>
       </AppShell.Navbar>
-
-      <AppShell.Main className="bg-green-50 overflow-hidden">
-        <Container fluid className="pt-10 container mx-auto" {...props}>
-          {children}
-        </Container>
+      <AppShell.Main py={{ lg: 0 }} bg="background.0" className={cn("h-screen", className)} {...props}>
+        {children}
       </AppShell.Main>
     </AppShell>
-  );
+  )
 }

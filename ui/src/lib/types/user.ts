@@ -5,6 +5,7 @@ export interface User {
   uid: string;
   name: string;
   email: string;
+  hasProfile: boolean;
 }
 
 // Converters
@@ -18,5 +19,6 @@ export const convertUser = (user: API.User): User => {
     uid: user.uid,
     name: name,
     email: user.email,
+    hasProfile: false,
   }
 }

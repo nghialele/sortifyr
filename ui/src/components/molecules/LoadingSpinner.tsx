@@ -9,7 +9,7 @@ export const LoadingSpinner = ({ title = "" }: Props) => {
   return (
     <Center>
       <Group gap="sm">
-        <CgSpinner className="h-8 w-8 animate-spin text-red-500" />
+        <CgSpinner className="h-8 w-8 animate-spin text-[#7fe0c9]" />
         <Text>{title}</Text>
       </Group>
     </Center>

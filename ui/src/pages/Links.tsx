@@ -1,13 +1,13 @@
-import { ModalCenter } from "@/components/atoms/ModalCenter"
+import { Page, PageTitle, Section, SectionTitle } from "@/components/atoms/Page"
 import { LinkConnections } from "@/components/link/LinkConnections"
 import { LinkTree } from "@/components/link/LinkTree"
 import { Confirm } from "@/components/molecules/Confirm"
-import { LoadingSpinner } from "@/components/molecules/LoadingSpinner"
 import { useDirectoryGetAll } from "@/lib/api/directory"
 import { useLinkAnchor } from "@/lib/hooks/useLinkAnchor"
 import { LinkAnchorProvider } from "@/lib/providers/LinkAnchorProvider"
-import { Button, Stack, Title, Text } from "@mantine/core"
+import { Badge, Button, Group, Stack } from "@mantine/core"
 import { useDisclosure, useMediaQuery } from "@mantine/hooks"
+import { useMemo } from "react"
 
 export const Links = () => {
   return (
@@ -17,90 +17,97 @@ export const Links = () => {
   )
 }
 
-const explanation = `A link is a connection between 2 items and represents a one way synchronization of songs.
-If the left item is a directory then it will synchronize every song from nested playlist in that directory.
-If the right item is a directory then it will synchronize to any nested playlist in that directory.
-
-If a link is not visibile because the playlist is collapsed then a red number will appear with the amount of non visible links.
+const explanation = `Drag connections between directories and playlists on the left and the right. Click on a connection to remove it.
+Some connections are not shown because the source / destination is not visible. They are indicated with a red number.
+Tracks from sources will periodically be added to the destination
 `
 
 const LinksInner = () => {
   const { data: directories, isLoading } = useDirectoryGetAll()
 
-  const { resetConnections, saveConnections } = useLinkAnchor()
+  const { visibleAnchorsRef, connections, layoutVersion, resetConnections, saveConnections } = useLinkAnchor()
+  const hidden = useMemo(() => {
+    return connections.filter(({ from, to }) => !(visibleAnchorsRef.current[from] && visibleAnchorsRef.current[to])).length
+  }, [connections, layoutVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [openedInfo, { open: openInfo, close: closeInfo }] = useDisclosure()
   const [openedReset, { open: openReset, close: closeReset }] = useDisclosure()
   const [openedSave, { open: openSave, close: closeSave }] = useDisclosure()
 
   const mdPoint = useMediaQuery('(width >= 64em)');
 
-  if (isLoading) return <LoadingSpinner />
-  if (!mdPoint) return (
-    <div className="flex flex-col justify-center gap-4">
-      <Title order={1} className="text-center">Links</Title>
-      <span className="text-center">This page only supports big screen, apologies!</span>
-    </div>
-  )
-
-  const handleInfo = () => {
-    openInfo()
-  }
-
-  const handleResetInit = () => {
-    openReset()
-  }
-
-  const handleReset = () => {
-    resetConnections()
-    closeReset()
-  }
-
-  const handleSaveInit = () => {
-    openSave()
-  }
-
-  const handleSave = async () => {
-    await saveConnections()
-    closeSave()
+  if (!mdPoint) {
+    return (
+      <Page>
+        <PageTitle
+          title="Links"
+          description="Connect directories and playlists"
+        />
+        <Section>
+          <SectionTitle
+            title="Visual linking"
+            description="This screen is only available on big screens."
+          />
+        </Section>
+      </Page>
+    )
   }
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-8">
-        <Title order={1} className="col-span-full text-center">Links</Title>
-
-        <div className="col-span-full">
-          <div className="flex items-center justify-end gap-2">
-            <Button onClick={handleInfo} variant="outline" className="mr-8">Info</Button>
-            <Button onClick={handleResetInit} color="red">Reset</Button>
-            <Button onClick={handleSaveInit}>Save</Button>
+      <Page className="select-none">
+        <PageTitle
+          title="Links"
+          description="Connect directories and playlists"
+        />
+        <Section>
+          <Group justify="space-between">
+            <SectionTitle
+              title="Visual linking"
+              description={explanation}
+            />
+            <Stack gap="xs" align="end">
+              <Badge color="secondary.2">{`${connections.length} Connection${connections.length !== 1 ? "s" : ""}`}</Badge>
+              <Badge color="red">{`${hidden} Hidden`}</Badge>
+            </Stack>
+          </Group>
+          <div className="flex-1 flex gap-4 overflow-hidden">
+            <LinkTree
+              roots={directories ?? []}
+              side="left"
+              title="Source"
+              isLoading={isLoading}
+              className="flex-1"
+            />
+            <div className="h-full w-[20%]" />
+            <LinkTree
+              roots={directories ?? []}
+              side="right"
+              title="Target"
+              isLoading={isLoading}
+              className="flex-1"
+            />
           </div>
-        </div>
 
-        <div className="col-span-1 col-start-1 space-y-1">
-          {directories?.map(d => <LinkTree key={d.id} side="left" directory={d} />)}
-        </div>
-
-        <div className="col-span-1 col-start-3 space-y-1">
-          {directories?.map(d => <LinkTree key={d.id} side="right" directory={d} />)}
-        </div>
-      </div>
+          <Group justify="end">
+            <Button onClick={openReset} variant="default" radius="lg" className="text-muted">
+              Reset changes
+            </Button>
+            <Button onClick={openSave} radius="lg">
+              Apply changes
+            </Button>
+          </Group>
+        </Section>
+      </Page>
 
       <LinkConnections />
-      <ModalCenter opened={openedInfo} onClose={closeInfo} title="Info">
-        <Stack>
-          <Text fw="bold">Explanation</Text>
-          <div className="whitespace-pre-wrap">{explanation}</div>
-        </Stack>
-      </ModalCenter>
+
       <Confirm
         opened={openedReset}
         onClose={closeReset}
         modalTitle="Reset"
         title="Reset links"
         description="Are you sure you want to discard all changes?"
-        onConfirm={handleReset}
+        onConfirm={() => { resetConnections(); closeReset() }}
       />
       <Confirm
         opened={openedSave}
@@ -108,9 +115,8 @@ const LinksInner = () => {
         modalTitle="Save"
         title="Save links"
         description="Are you sure you want to save?"
-        onConfirm={handleSave}
+        onConfirm={() => { saveConnections(); closeSave() }}
       />
     </>
   )
 }
-

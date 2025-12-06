@@ -12,14 +12,15 @@ import { Playlist } from "../types/playlist";
 import { debounce } from "../utils";
 
 const linkToConnection = (link: Link): LinkConnection => {
-  let from = ""
-  let to = ""
+  const from =
+    (link.sourceDirectoryId && getLinkDirectoryId({ id: link.sourceDirectoryId }, "left")) ||
+    (link.sourcePlaylistId && getLinkPlaylistId({ id: link.sourcePlaylistId }, "left")) ||
+    ""
 
-  if (link.sourceDirectoryId) from = getLinkDirectoryId({ id: link.sourceDirectoryId }, "left")
-  else if (link.sourcePlaylistId) from = getLinkPlaylistId({ id: link.sourcePlaylistId }, "left")
-
-  if (link.targetDirectoryId) to = getLinkDirectoryId({ id: link.targetDirectoryId }, "right")
-  else if (link.targetPlaylistId) to = getLinkPlaylistId({ id: link.targetPlaylistId }, "right")
+  const to =
+    (link.targetDirectoryId && getLinkDirectoryId({ id: link.targetDirectoryId }, "right")) ||
+    (link.targetPlaylistId && getLinkPlaylistId({ id: link.targetPlaylistId }, "right")) ||
+    ""
 
   return { from, to }
 }
@@ -29,15 +30,15 @@ export const LinkAnchorProvider = ({ children }: PropsWithChildren) => {
   const saveLinks = useLinkSync()
 
   const anchorsRef = useRef<LinkAnchorMap>({})
-  const allAnchorsRef = useRef<LinkAnchorMap>({})
+  const visibleAnchorsRef = useRef<Record<string, boolean>>({})
+  const observersRef = useRef<Record<string, IntersectionObserver>>({})
+
   const [connections, setConnections] = useState<LinkConnection[]>([])
   const [draggingFrom, setDraggingFrom] = useState<string | null>(null)
   const [tempPos, setTempPos] = useState<{ x: number; y: number } | null>(null)
-  const [, setLayoutVersion] = useState(0)
   const [hoveredConnection, setHoveredConnection] = useState<LinkConnection | null>(null)
 
-  const observers = useRef<Record<string, ResizeObserver | null>>({})
-
+  const [layoutVersion, setLayoutVersion] = useState(0)
   const debouncedLayoutChange = useRef(
     debounce(() => setLayoutVersion(v => v + 1), 40)
   ).current
@@ -46,29 +47,47 @@ export const LinkAnchorProvider = ({ children }: PropsWithChildren) => {
     debouncedLayoutChange()
   }, [debouncedLayoutChange])
 
+  const observeAnchor = useCallback((id: string, el: HTMLElement) => {
+    const intersection = new IntersectionObserver(([entry]) => {
+      const prev = visibleAnchorsRef.current[id]
+      const next = entry.isIntersecting
+
+      if (prev !== next) {
+        visibleAnchorsRef.current[id] = next
+        notifyLayoutChange()
+      }
+    })
+
+    intersection.observe(el)
+
+    observersRef.current[id] = intersection
+  },
+    [notifyLayoutChange]
+  )
+
+  const unobserveAnchor = useCallback((id: string) => {
+    const obs = observersRef.current[id]
+    if (!obs) return
+
+    obs?.disconnect()
+    delete observersRef.current[id]
+  }, [])
+
   const registerAnchor = useCallback((id: string, anchor: { el: HTMLElement | null, side: Side, directory?: Pick<Directory, "id">, playlist?: Pick<Playlist, "id"> }) => {
     if (anchor.el) {
-      anchorsRef.current[id] = anchor
+      anchorsRef.current[id] ??= anchor
 
-      if (!observers.current[id]) {
-        const observer = new ResizeObserver(() => notifyLayoutChange())
-        observer.observe(anchor.el)
-        observers.current[id] = observer
-      }
-
-      if (!(id in allAnchorsRef.current)) allAnchorsRef.current[id] = anchor
+      if (!observersRef.current[id]) observeAnchor(id, anchor.el)
     } else {
       delete anchorsRef.current[id]
-
-      observers.current[id]?.disconnect()
-      delete observers.current[id]
+      unobserveAnchor(id)
     }
 
     notifyLayoutChange()
-  }, [notifyLayoutChange])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startConnection = useCallback((id: string) => {
-    setDraggingFrom(id);
+    setDraggingFrom(id)
     document.body.style.userSelect = "none"
   }, [])
 
@@ -112,14 +131,14 @@ export const LinkAnchorProvider = ({ children }: PropsWithChildren) => {
       if (!draggingFrom) return
 
       setTempPos({ x: e.clientX, y: e.clientY })
-    };
+    }
 
     const onUp = () => {
       if (!draggingFrom) return
 
       setDraggingFrom(null)
       setTempPos(null)
-    };
+    }
 
     window.addEventListener("mousemove", onMove)
     window.addEventListener("mouseup", onUp)
@@ -144,8 +163,8 @@ export const LinkAnchorProvider = ({ children }: PropsWithChildren) => {
 
   const saveConnections = useCallback(async () => {
     const links: LinkSchema[] = connections.map(c => {
-      const from = allAnchorsRef.current[c.from]
-      const to = allAnchorsRef.current[c.to]
+      const from = anchorsRef.current[c.from]
+      const to = anchorsRef.current[c.to]
 
       return {
         sourceDirectoryId: from.directory?.id,
@@ -181,13 +200,14 @@ export const LinkAnchorProvider = ({ children }: PropsWithChildren) => {
     connections,
     draggingFrom,
     tempPos,
-    notifyLayoutChange,
+    layoutVersion,
     anchorsRef,
+    visibleAnchorsRef,
     hoveredConnection,
     setHoveredConnection,
     resetConnections,
     saveConnections,
-  }), [registerAnchor, startConnection, finishConnection, removeConnection, connections, draggingFrom, tempPos, notifyLayoutChange, anchorsRef, hoveredConnection, setHoveredConnection, resetConnections, saveConnections])
+  }), [registerAnchor, startConnection, finishConnection, removeConnection, connections, draggingFrom, tempPos, layoutVersion, anchorsRef, visibleAnchorsRef, hoveredConnection, setHoveredConnection, resetConnections, saveConnections])
 
   if (isLoading) return <LoadingSpinner />
 

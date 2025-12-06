@@ -43,13 +43,14 @@ export namespace API {
     last_run?: string;
     last_message?: string;
     last_error?: string;
-    interval?: number;
+    interval: number;
   }
 
   export interface TaskHistory extends Base {
     name: string;
     result: string;
     run_at: string;
+    message?: string;
     error?: string;
     duration: number;
   }

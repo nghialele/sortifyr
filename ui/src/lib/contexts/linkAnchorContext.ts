@@ -4,7 +4,7 @@ import { Directory } from "../types/directory";
 import { Playlist } from "../types/playlist";
 
 export type LinkType = "directory" | "playlist"
-export type LinkAnchorMap = Record<string, { el: HTMLElement | null, side: Side, directory?: Pick<Directory, "id">, playlist?: Pick<Playlist, "id"> }>;
+export type LinkAnchorMap = Record<string, { el: HTMLElement | null, side: Side, directory?: Pick<Directory, "id">, playlist?: Pick<Playlist, "id">, _size?: { width: number; height: number } }>;
 export type LinkConnection = { from: string; to: string };
 
 interface LinkAnchorContextType {
@@ -15,8 +15,9 @@ interface LinkAnchorContextType {
   connections: LinkConnection[];
   draggingFrom: string | null;
   tempPos: { x: number; y: number } | null;
-  notifyLayoutChange: () => void;
+  layoutVersion: number;
   anchorsRef: RefObject<LinkAnchorMap>;
+  visibleAnchorsRef: RefObject<Record<string, boolean>>;
   hoveredConnection: LinkConnection | null;
   setHoveredConnection: (connection: LinkConnection | null) => void;
   resetConnections: () => void;

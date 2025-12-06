@@ -8,7 +8,7 @@ export const LoadableImage = ({ className, ...props }: Props) => {
   const [loaded, setLoaded] = useState(false)
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative">
       {!loaded && (
         <div className="absolute inset-0 flex items-center justify-center">
           <LoadingSpinner />
