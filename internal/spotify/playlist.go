@@ -1,203 +1,235 @@
-// Package spotify connects with the spotify API
 package spotify
 
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/internal/spotify/api"
+	"github.com/topvennie/sortifyr/pkg/storage"
 	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
-type playlistImageAPI struct {
-	URL    string `json:"url"`
-	Height int    `json:"height"`
-	Width  int    `json:"width"`
-}
+func (c *client) playlistSync(ctx context.Context, user model.User) (string, error) {
+	playlistsDB, err := c.playlist.GetByUserPopulated(ctx, user.ID)
+	if err != nil {
+		return "", err
+	}
 
-type playlistAPI struct {
-	SpotifyID string `json:"id"`
-	Owner     struct {
-		UID         string `json:"id"`
-		DisplayName string `json:"display_name"`
-	} `json:"owner"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Public      bool   `json:"public"`
-	Tracks      struct {
-		Total int `json:"total"`
-	} `json:"tracks"`
-	Collaborative bool               `json:"collaborative"`
-	Images        []playlistImageAPI `json:"images"`
-}
+	playlistsSpotifyAPI, err := c.api.PlaylistGetAll(ctx, user)
+	if err != nil {
+		return "", err
+	}
+	playlistsSpotify := utils.SliceMap(playlistsSpotifyAPI, func(p api.Playlist) model.Playlist { return p.ToModel(user) })
 
-func (p *playlistAPI) toModel(user model.User) model.Playlist {
-	url := ""
-	maxWidth := -1
-	for _, image := range p.Images {
-		if image.Width > maxWidth {
-			url = image.URL
-			maxWidth = image.Width
+	toCreate := make([]model.Playlist, 0)
+	toUpdate := make([]model.Playlist, 0)
+	toDelete := make([]model.Playlist, 0)
+
+	// Find the playlists that need to be created or updated
+	for i := range playlistsSpotify {
+		playlistDB, ok := utils.SliceFind(playlistsDB, func(p *model.Playlist) bool { return p.Equal(playlistsSpotify[i]) })
+		if !ok {
+			// Playlist doesn't exist yet
+			// Create it
+			toCreate = append(toCreate, playlistsSpotify[i])
+			continue
+		}
+
+		// Playlist already exist
+		// But is it still completely the same?
+		if !(*playlistDB).EqualEntry(playlistsSpotify[i]) {
+			// Not completely the same anymore
+			// Update it
+			toUpdate = append(toUpdate, playlistsSpotify[i])
 		}
 	}
 
-	return model.Playlist{
-		UserID:        user.ID,
-		SpotifyID:     p.SpotifyID,
-		OwnerUID:      p.Owner.UID,
-		Name:          p.Name,
-		Description:   p.Description,
-		Public:        p.Public,
-		TrackAmount:   p.Tracks.Total,
-		Collaborative: p.Collaborative,
-		CoverURL:      url,
-		Owner: model.User{
-			UID:         p.Owner.UID,
-			DisplayName: p.Owner.DisplayName,
-		},
+	// Do the database operations
+	for i := range toCreate {
+		if err := c.userCheck(ctx, toCreate[i].OwnerUID); err != nil {
+			return "", err
+		}
+		if err := c.playlist.Create(ctx, &toCreate[i]); err != nil {
+			return "", err
+		}
 	}
-}
 
-type playlistResponse struct {
-	Total int           `json:"total"`
-	Items []playlistAPI `json:"items"`
-}
+	for i := range toUpdate {
+		if err := c.userCheck(ctx, toUpdate[i].OwnerUID); err != nil {
+			return "", err
+		}
+		if err := c.playlist.Update(ctx, toUpdate[i]); err != nil {
+			return "", err
+		}
+	}
 
-func (c *client) playlistGetAll(ctx context.Context, user model.User) ([]model.Playlist, error) {
-	playlists := make([]model.Playlist, 0)
-
-	limit := 50
-	offset := 0
-
-	resp, err := c.playlistGet(ctx, user, limit, offset)
+	// New and updated entries are now in the database
+	// Let's bring our local copy up to date
+	playlistsDB, err = c.playlist.GetByUserPopulated(ctx, user.ID)
 	if err != nil {
-		return nil, fmt.Errorf("get playlist with limit %d and offset %d | %w", limit, offset, err)
+		return "", err
 	}
-	playlists = append(playlists, utils.SliceMap(resp.Items, func(p playlistAPI) model.Playlist { return p.toModel(user) })...)
 
-	total := resp.Total
+	// Find the playlists that need to be deleted
+	for _, playlistDB := range playlistsDB {
+		_, ok := utils.SliceFind(playlistsSpotify, func(p model.Playlist) bool { return p.SpotifyID == playlistDB.SpotifyID })
+		if !ok {
+			// Playlist no longer exists in the user's account
+			// So delete it
+			toDelete = append(toDelete, *playlistDB)
+		}
+	}
 
-	for offset+limit < total {
-		offset += limit
+	for i := range toDelete {
+		if err := c.playlist.Delete(ctx, toDelete[i].ID); err != nil {
+			return "", err
+		}
+	}
 
-		resp, err := c.playlistGet(ctx, user, limit, offset)
+	return fmt.Sprintf("Created: %d | Updated: %d | Deleted: %d", len(toCreate), len(toUpdate), len(toDelete)), nil
+}
+
+func (c *client) playlistCoverSync(ctx context.Context, user model.User) (string, error) {
+	playlists, err := c.playlist.GetByUserPopulated(ctx, user.ID)
+	if err != nil {
+		return "", err
+	}
+	if playlists == nil {
+		return "", nil
+	}
+
+	newCovers := 0
+
+	for _, playlist := range playlists {
+		if playlist.CoverURL == "" {
+			continue
+		}
+
+		cover, err := c.getCover(*playlist)
 		if err != nil {
-			return nil, fmt.Errorf("get playlist with limit %d and offset %d | %w", limit, offset, err)
+			return "", err
 		}
-		playlists = append(playlists, utils.SliceMap(resp.Items, func(p playlistAPI) model.Playlist { return p.toModel(user) })...)
+		if len(cover) == 0 {
+			continue
+		}
+
+		oldCover := []byte{}
+		if playlist.CoverID != "" {
+			oldCover, err = storage.S.Get(playlist.CoverID)
+			if err != nil {
+				return "", fmt.Errorf("get cover for %+v | %w", *playlist, err)
+			}
+		}
+
+		if bytes.Equal(cover, oldCover) {
+			continue
+		}
+
+		playlist.CoverID = uuid.NewString()
+		if err := storage.S.Set(playlist.CoverID, cover, 0); err != nil {
+			return "", fmt.Errorf("store new cover %+v | %w", *playlist, err)
+		}
+
+		if err := c.playlist.Update(ctx, *playlist); err != nil {
+			return "", err
+		}
+
+		newCovers++
 	}
 
-	return playlists, nil
+	return fmt.Sprintf("New Covers: %d", newCovers), nil
 }
 
-func (c *client) playlistGet(ctx context.Context, user model.User, limit, offset int) (playlistResponse, error) {
-	var resp playlistResponse
-
-	if err := c.request(ctx, user, http.MethodGet, fmt.Sprintf("me/playlists?offset=%d&limit=%d", offset, limit), http.NoBody, &resp); err != nil {
-		return resp, fmt.Errorf("get playlist %w", err)
-	}
-
-	return resp, nil
-}
-
-type playlistTrackAPI struct {
-	Track struct {
-		SpotifyID  string `json:"id"`
-		Name       string `json:"name"`
-		Popularity int    `json:"popularity"`
-	} `json:"track"`
-}
-
-func (p *playlistTrackAPI) toModel() model.Track {
-	return model.Track{
-		SpotifyID:  p.Track.SpotifyID,
-		Name:       p.Track.Name,
-		Popularity: p.Track.Popularity,
-	}
-}
-
-type playlistTrackResponse struct {
-	Total int                `json:"total"`
-	Items []playlistTrackAPI `json:"items"`
-}
-
-func (c *client) playlistGetTrackAll(ctx context.Context, user model.User, playlist model.Playlist) ([]model.Track, error) {
-	tracks := make([]model.Track, 0)
-
-	limit := 50
-	offset := 0
-
-	resp, err := c.playlistGetTrack(ctx, user, playlist, limit, offset)
+// playlistTrackSync brings the local database up to date with the songs for each playlist
+func (c *client) playlistTrackSync(ctx context.Context, user model.User) (string, error) {
+	playlists, err := c.playlist.GetByUserPopulated(ctx, user.ID)
 	if err != nil {
-		return nil, fmt.Errorf("get playlist tracks %+v with limit %d and offset %d | %w", playlist, limit, offset, err)
+		return "", err
 	}
-	tracks = append(tracks, utils.SliceMap(resp.Items, func(t playlistTrackAPI) model.Track { return t.toModel() })...)
+	if playlists == nil {
+		return "", nil
+	}
 
-	total := resp.Total
+	totalCreated := 0
+	totalDeleted := 0
 
-	for offset+limit < total {
-		offset += limit
-
-		resp, err := c.playlistGetTrack(ctx, user, playlist, limit, offset)
+	for _, playlist := range playlists {
+		tracksDB, err := c.track.GetByPlaylist(ctx, playlist.ID)
 		if err != nil {
-			return nil, fmt.Errorf("get playlist tracks %+v with limit %d and offset %d | %w", playlist, limit, offset, err)
-		}
-		tracks = append(tracks, utils.SliceMap(resp.Items, func(t playlistTrackAPI) model.Track { return t.toModel() })...)
-	}
-
-	return tracks, nil
-}
-
-func (c *client) playlistGetTrack(ctx context.Context, user model.User, playlist model.Playlist, limit, offset int) (playlistTrackResponse, error) {
-	var resp playlistTrackResponse
-
-	if err := c.request(ctx, user, http.MethodGet, fmt.Sprintf("playlists/%s/tracks?offset=%d&limit=%d", playlist.SpotifyID, offset, limit), http.NoBody, &resp); err != nil {
-		return resp, fmt.Errorf("get playlist tracks %w", err)
-	}
-
-	return resp, nil
-}
-
-func (c *client) playlistPostTrackAll(ctx context.Context, user model.User, playlist model.Playlist, tracks []model.Track) error {
-	current := 0
-	total := len(tracks)
-
-	for current < total {
-		end := current + 100
-		if end > total {
-			end = total
+			return "", err
 		}
 
-		toAdd := tracks[current:end]
-		if err := c.playlistPostTrack(ctx, user, playlist, toAdd); err != nil {
-			return fmt.Errorf("add tracks %d-%d to playlist %+v | %w", current, end, playlist, err)
+		tracksSpotifyAPI, err := c.api.PlaylistGetTrackAll(ctx, user, playlist.SpotifyID)
+		if err != nil {
+			return "", err
+		}
+		tracksSpotify := utils.SliceMap(tracksSpotifyAPI, func(t api.Track) model.Track { return t.ToModel() })
+
+		toCreate := make([]model.Track, 0)
+		toDelete := make([]model.Track, 0)
+
+		for _, trackSpotify := range tracksSpotify {
+			if _, ok := utils.SliceFind(tracksDB, func(t *model.Track) bool { return t.Equal(trackSpotify) }); !ok {
+				toCreate = append(toCreate, trackSpotify)
+			}
 		}
 
-		current = end
+		for _, trackDB := range tracksDB {
+			if _, ok := utils.SliceFind(tracksSpotify, func(t model.Track) bool { return t.Equal(*trackDB) }); !ok {
+				toDelete = append(toDelete, *trackDB)
+			}
+		}
+
+		// Do the db operations
+		for _, track := range toCreate {
+			if err := c.trackCheck(ctx, &track); err != nil {
+				return "", err
+			}
+
+			if err := c.playlist.CreateTrack(ctx, &model.PlaylistTrack{
+				PlaylistID: playlist.ID,
+				TrackID:    track.ID,
+			}); err != nil {
+				return "", err
+			}
+		}
+
+		for _, track := range toDelete {
+			if err := c.playlist.DeleteTrackByPlaylistTrack(ctx, model.PlaylistTrack{
+				PlaylistID: playlist.ID,
+				TrackID:    track.ID,
+			}); err != nil {
+				return "", err
+			}
+		}
+
+		totalCreated += len(toCreate)
+		totalDeleted += len(toDelete)
 	}
 
-	return nil
+	return fmt.Sprintf("Created %d | Deleted %d", totalCreated, totalDeleted), nil
 }
 
-func (c *client) playlistPostTrack(ctx context.Context, user model.User, playlist model.Playlist, tracks []model.Track) error {
-	payload := struct {
-		URIS []string `json:"uris"`
-	}{
-		URIS: utils.SliceMap(tracks, func(t model.Track) string { return "spotify:track:" + t.SpotifyID }),
-	}
-
-	data, err := json.Marshal(payload)
+func (c *client) playlistCheck(ctx context.Context, playlist *model.Playlist) error {
+	playlistDB, err := c.playlist.GetBySpotify(ctx, playlist.SpotifyID)
 	if err != nil {
-		return fmt.Errorf("marshal tracks payload: %w", err)
-	}
-
-	body := bytes.NewReader(data)
-
-	if err := c.request(ctx, user, http.MethodPost, fmt.Sprintf("playlists/%s/tracks", playlist.SpotifyID), body, noResp); err != nil {
 		return err
+	}
+
+	if playlistDB == nil {
+		if err := c.userCheck(ctx, playlist.OwnerUID); err != nil {
+			return err
+		}
+		return c.playlist.Create(ctx, playlist)
+	}
+
+	playlist.ID = playlistDB.ID
+
+	if !playlistDB.EqualEntry(*playlist) {
+		return c.playlist.Update(ctx, *playlist)
 	}
 
 	return nil

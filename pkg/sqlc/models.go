@@ -53,6 +53,22 @@ func (ns NullTaskResult) Value() (driver.Value, error) {
 	return string(ns.TaskResult), nil
 }
 
+type Album struct {
+	ID          int32
+	SpotifyID   string
+	Name        string
+	TrackAmount int32
+	Popularity  int32
+}
+
+type Artist struct {
+	ID         int32
+	SpotifyID  string
+	Name       string
+	Followers  int32
+	Popularity int32
+}
+
 type Directory struct {
 	ID       int32
 	UserID   int32
@@ -64,6 +80,17 @@ type DirectoryPlaylist struct {
 	ID          int32
 	DirectoryID int32
 	PlaylistID  int32
+}
+
+type History struct {
+	ID         int32
+	UserID     int32
+	TrackID    int32
+	PlayedAt   pgtype.Timestamptz
+	AlbumID    pgtype.Int4
+	ArtistID   pgtype.Int4
+	PlaylistID pgtype.Int4
+	ShowID     pgtype.Int4
 }
 
 type Link struct {
@@ -92,6 +119,13 @@ type PlaylistTrack struct {
 	ID         int32
 	PlaylistID int32
 	TrackID    int32
+}
+
+type Show struct {
+	ID            int32
+	SpotifyID     string
+	EpisodeAmount int32
+	Name          string
 }
 
 type Task struct {

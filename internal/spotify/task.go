@@ -13,6 +13,7 @@ const (
 	taskPlaylistUID = "task-playlist"
 	taskTrackUID    = "task-track"
 	taskUserUID     = "task-user"
+	taskHistoryUID  = "task-history"
 )
 
 func (c *client) taskRegister() error {
@@ -43,6 +44,15 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
+	if err := task.Manager.Add(context.Background(), task.NewTask(
+		taskHistoryUID,
+		"History: Synchronize",
+		config.GetDefaultDuration("task.history_s", 10*60),
+		c.taskWrap(c.taskHistory),
+	)); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -64,12 +74,12 @@ func (c *client) taskWrap(fn func(context.Context, model.User) (string, error)) 
 }
 
 func (c *client) taskPlaylist(ctx context.Context, user model.User) (string, error) {
-	msg1, err := c.syncPlaylist(ctx, user)
+	msg1, err := c.playlistSync(ctx, user)
 	if err != nil {
 		return "", fmt.Errorf("synchronize playlists %w", err)
 	}
 
-	msg2, err := c.syncPlaylistCover(ctx, user)
+	msg2, err := c.playlistCoverSync(ctx, user)
 	if err != nil {
 		return "", fmt.Errorf("synchronize playlist covers %w", err)
 	}
@@ -78,12 +88,12 @@ func (c *client) taskPlaylist(ctx context.Context, user model.User) (string, err
 }
 
 func (c *client) taskTrack(ctx context.Context, user model.User) (string, error) {
-	msg1, err := c.syncPlaylistTrack(ctx, user)
+	msg1, err := c.playlistTrackSync(ctx, user)
 	if err != nil {
 		return "", fmt.Errorf("synchronize tracks %w", err)
 	}
 
-	msg2, err := c.syncLink(ctx, user)
+	msg2, err := c.tracksSync(ctx, user)
 	if err != nil {
 		return "", fmt.Errorf("update playlist tracks based on links %w", err)
 	}
@@ -94,6 +104,14 @@ func (c *client) taskTrack(ctx context.Context, user model.User) (string, error)
 func (c *client) taskUser(ctx context.Context, user model.User) (string, error) {
 	if err := c.syncUser(ctx, user); err != nil {
 		return "", fmt.Errorf("synchronize users %w", err)
+	}
+
+	return "", nil
+}
+
+func (c *client) taskHistory(ctx context.Context, user model.User) (string, error) {
+	if _, err := c.historySync(ctx, user); err != nil {
+		return "", fmt.Errorf("get history %w", err)
 	}
 
 	return "", nil

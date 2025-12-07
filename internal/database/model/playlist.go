@@ -61,7 +61,7 @@ func (p *Playlist) Equal(p2 Playlist) bool {
 }
 
 func (p *Playlist) EqualEntry(p2 Playlist) bool {
-	return p.OwnerUID == p2.OwnerUID && p.Name == p2.Name && p.Description == p2.Description && p.Public == p2.Public && p.TrackAmount == p2.TrackAmount && p.Collaborative == p2.Collaborative && p.CoverURL == p2.CoverURL
+	return p.OwnerUID == p2.OwnerUID && p.Name == p2.Name && p.Description == p2.Description && p.Public == p2.Public && p.TrackAmount == p2.TrackAmount && p.Collaborative == p2.Collaborative
 }
 
 type PlaylistTrack struct {

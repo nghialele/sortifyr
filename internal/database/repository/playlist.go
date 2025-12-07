@@ -14,11 +14,14 @@ import (
 
 type Playlist struct {
 	repo Repository
+
+	history History
 }
 
 func (r *Repository) NewPlaylist() *Playlist {
 	return &Playlist{
-		repo: *r,
+		repo:    *r,
+		history: *r.NewHistory(),
 	}
 }
 
@@ -29,6 +32,18 @@ func (p *Playlist) Get(ctx context.Context, playlistID int) (*model.Playlist, er
 			return nil, nil
 		}
 		return nil, fmt.Errorf("get playlist by id %d | %w", playlistID, err)
+	}
+
+	return model.PlaylistModel(playlist), nil
+}
+
+func (p *Playlist) GetBySpotify(ctx context.Context, spotifyID string) (*model.Playlist, error) {
+	playlist, err := p.repo.queries(ctx).PlaylistGetBySpotify(ctx, spotifyID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get playlist by spotify id %s | %w", spotifyID, err)
 	}
 
 	return model.PlaylistModel(playlist), nil

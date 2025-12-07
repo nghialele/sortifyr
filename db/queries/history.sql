@@ -1,0 +1,16 @@
+-- name: HistoryGetLatestByUser :one
+SELECT *
+FROM history
+WHERE user_id = $1
+ORDER BY played_at DESC
+LIMIT 1;
+
+-- name: HistoryGetByPlaylist :many
+SELECT *
+FROM history
+WHERE playlist_id = $1;
+
+-- name: HistoryCreate :one
+INSERT INTO history (user_id, track_id, played_at, album_id, artist_id, playlist_id, show_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id;

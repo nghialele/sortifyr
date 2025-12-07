@@ -1,56 +1,15 @@
 package spotify
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/pkg/image"
 	"go.uber.org/zap"
 )
-
-// userCheck creates the user if it doesn't exist yet
-func (c *client) userCheck(ctx context.Context, userUID string) error {
-	user, err := c.user.GetByUID(ctx, userUID)
-	if err != nil {
-		return err
-	}
-	if user != nil {
-		return nil
-	}
-
-	user = &model.User{
-		UID: userUID,
-	}
-
-	if err := c.user.Create(ctx, user); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// trackCheck creates or updates the track if needed
-func (c *client) trackCheck(ctx context.Context, track *model.Track) error {
-	trackDB, err := c.track.GetBySpotify(ctx, track.SpotifyID)
-	if err != nil {
-		return err
-	}
-
-	if trackDB == nil {
-		return c.track.Create(ctx, track)
-	}
-
-	track.ID = trackDB.ID
-
-	if !trackDB.Equal(*track) {
-		return c.track.UpdateBySpotify(ctx, *track)
-	}
-
-	return nil
-}
 
 func (c *client) getCover(playlist model.Playlist) ([]byte, error) {
 	zap.S().Infof("Get cover image for %s", playlist.Name)
@@ -92,10 +51,11 @@ func (c *client) getCover(playlist model.Playlist) ([]byte, error) {
 	return webp, nil
 }
 
-func accessKey(user model.User) string {
-	return user.UID + ":spotify:access_token"
-}
+func uriToID(uri string) string {
+	parts := strings.Split(uri, ":")
+	if len(parts) != 3 {
+		return ""
+	}
 
-func refreshKey(user model.User) string {
-	return user.UID + ":spotify:refresh_token"
+	return parts[2]
 }

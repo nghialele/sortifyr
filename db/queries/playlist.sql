@@ -3,6 +3,11 @@ SELECT *
 FROM playlists
 WHERE id = $1;
 
+-- name: PlaylistGetBySpotify :one
+SELECT *
+FROM playlists
+WHERE spotify_id = $1;
+
 -- name: PlaylistGetByUserWithOwner :many
 SELECT sqlc.embed(p), sqlc.embed(u)
 FROM playlists p

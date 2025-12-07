@@ -83,6 +83,31 @@ func (q *Queries) PlaylistGet(ctx context.Context, id int32) (Playlist, error) {
 	return i, err
 }
 
+const playlistGetBySpotify = `-- name: PlaylistGetBySpotify :one
+SELECT id, user_id, spotify_id, owner_uid, name, description, public, track_amount, collaborative, cover_id, cover_url
+FROM playlists
+WHERE spotify_id = $1
+`
+
+func (q *Queries) PlaylistGetBySpotify(ctx context.Context, spotifyID string) (Playlist, error) {
+	row := q.db.QueryRow(ctx, playlistGetBySpotify, spotifyID)
+	var i Playlist
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.SpotifyID,
+		&i.OwnerUid,
+		&i.Name,
+		&i.Description,
+		&i.Public,
+		&i.TrackAmount,
+		&i.Collaborative,
+		&i.CoverID,
+		&i.CoverUrl,
+	)
+	return i, err
+}
+
 const playlistGetByUserWithOwner = `-- name: PlaylistGetByUserWithOwner :many
 SELECT p.id, p.user_id, p.spotify_id, p.owner_uid, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, u.id, u.uid, u.name, u.display_name, u.email
 FROM playlists p
