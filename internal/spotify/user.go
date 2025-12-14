@@ -48,24 +48,3 @@ func (c *client) syncUser(ctx context.Context, user model.User) error {
 
 	return nil
 }
-
-// userCheck creates the user if it doesn't exist yet
-func (c *client) userCheck(ctx context.Context, userUID string) error {
-	user, err := c.user.GetByUID(ctx, userUID)
-	if err != nil {
-		return err
-	}
-	if user != nil {
-		return nil
-	}
-
-	user = &model.User{
-		UID: userUID,
-	}
-
-	if err := c.user.Create(ctx, user); err != nil {
-		return err
-	}
-
-	return nil
-}

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/pkg/sqlc"
 	"github.com/topvennie/sortifyr/pkg/utils"
@@ -74,7 +73,7 @@ func (u *User) Create(ctx context.Context, user *model.User) error {
 	id, err := u.repo.queries(ctx).UserCreate(ctx, sqlc.UserCreateParams{
 		Uid:         user.UID,
 		Name:        user.Name,
-		DisplayName: pgtype.Text{String: user.DisplayName, Valid: user.DisplayName != ""},
+		DisplayName: toString(user.DisplayName),
 		Email:       user.Email,
 	})
 	if err != nil {
@@ -90,7 +89,7 @@ func (u *User) Update(ctx context.Context, user model.User) error {
 	if err := u.repo.queries(ctx).UserUpdate(ctx, sqlc.UserUpdateParams{
 		ID:          int32(user.ID),
 		Name:        user.Name,
-		DisplayName: pgtype.Text{String: user.DisplayName, Valid: user.DisplayName != ""},
+		DisplayName: toString(user.DisplayName),
 		Email:       user.Email,
 	}); err != nil {
 		return fmt.Errorf("update user %+v | %w", user, err)

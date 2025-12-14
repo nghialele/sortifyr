@@ -1,17 +1,10 @@
 package spotify
 
 import (
-	"bytes"
 	"context"
-	"errors"
-	"fmt"
-	"sync"
 
-	"github.com/google/uuid"
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/internal/spotify/api"
-	"github.com/topvennie/sortifyr/pkg/concurrent"
-	"github.com/topvennie/sortifyr/pkg/storage"
 	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
@@ -22,58 +15,37 @@ func (c *client) showSync(ctx context.Context, user model.User) error {
 		return err
 	}
 
-	showsSpotifyAPI, err := c.api.ShowGetAll(ctx, user)
+	showsSpotifyAPI, err := c.api.ShowGetUser(ctx, user)
 	if err != nil {
 		return err
 	}
 	showsSpotify := utils.SliceMap(showsSpotifyAPI, func(s api.Show) model.Show { return s.ToModel() })
 
-	// Find shows we need to create
-	for i := range showsSpotify {
-		if _, ok := utils.SliceFind(showsDB, func(s *model.Show) bool { return s.Equal(showsSpotify[i]) }); ok {
-			continue
-		}
-
-		// User doesn't have this show yet
-		show, err := c.show.GetBySpotify(ctx, showsSpotify[i].SpotifyID)
-		if err != nil {
-			return err
-		}
-		if show == nil {
-			// We don't have the show in our database yet
-			if err := c.show.Create(ctx, &showsSpotify[i]); err != nil {
-				return err
-			}
-		}
-
-		if err := c.show.CreateUser(ctx, &model.ShowUser{UserID: user.ID, ShowID: show.ID}); err != nil {
-			return err
-		}
-
-		showsDB = append(showsDB, show)
-	}
-
-	// Find shows we need to delete
-	for i := range showsDB {
-		if _, ok := utils.SliceFind(showsSpotify, func(s model.Show) bool { return s.Equal(*showsDB[i]) }); !ok {
-			// User no longer has this show saved
-			if err := c.show.DeleteUserByUserShow(ctx, model.ShowUser{UserID: user.ID, ShowID: showsDB[i].ID}); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+	return syncUserData(syncUserDataStruct[model.Show]{
+		DB:     utils.SliceDereference(showsDB),
+		API:    showsSpotify,
+		Equal:  func(s1, s2 model.Show) bool { return s1.Equal(s2) },
+		Get:    func(s model.Show) (*model.Show, error) { return c.show.GetBySpotify(ctx, s.SpotifyID) },
+		Create: func(s *model.Show) error { return c.show.Create(ctx, s) },
+		CreateUserLink: func(s model.Show) error {
+			return c.show.CreateUser(ctx, &model.ShowUser{ShowID: s.ID, UserID: user.ID})
+		},
+		DeleteUserLink: func(s model.Show) error {
+			return c.show.DeleteUserByUserShow(ctx, model.ShowUser{ShowID: s.ID, UserID: user.ID})
+		},
+	})
 }
 
 // showUpdate updates local show instances to match the spotify data
+// It updates all shows, regardless of the user given.
+// However the given user's access token is used.
 func (c *client) showUpdate(ctx context.Context, user model.User) error {
-	showsDB, err := c.show.GetByUser(ctx, user.ID)
+	showsDB, err := c.show.GetAll(ctx)
 	if err != nil {
 		return err
 	}
 
-	showsSpotifyAPI, err := c.api.ShowGetAll(ctx, user)
+	showsSpotifyAPI, err := c.api.ShowGetAll(ctx, user, utils.SliceMap(showsDB, func(s *model.Show) string { return s.SpotifyID }))
 	if err != nil {
 		return err
 	}
@@ -83,13 +55,12 @@ func (c *client) showUpdate(ctx context.Context, user model.User) error {
 		showDB, ok := utils.SliceFind(showsDB, func(s *model.Show) bool { return s.Equal(showsSpotify[i]) })
 		if !ok {
 			// Show not found
-			if err := c.show.Create(ctx, &showsSpotify[i]); err != nil {
-				return err
-			}
-
 			continue
 		}
 
+		showsSpotify[i].ID = (*showDB).ID
+
+		// Bring the show up to date
 		if !(*showDB).EqualEntry(showsSpotify[i]) {
 			if err := c.show.Update(ctx, showsSpotify[i]); err != nil {
 				return err
@@ -106,84 +77,14 @@ func (c *client) showCoverSync(ctx context.Context, user model.User) error {
 		return err
 	}
 
-	wg := concurrent.NewLimitedWaitGroup(12)
-
-	var mu sync.Mutex
-	var errs []error
-
-	for _, show := range shows {
-		if show.CoverURL == "" {
-			continue
+	return c.syncCover(ctx, utils.SliceMap(shows, func(s *model.Show) syncCoverStruct {
+		return syncCoverStruct{
+			CoverURL: s.CoverURL,
+			CoverID:  s.CoverID,
+			Update: func(newID string) error {
+				s.CoverID = newID
+				return c.show.Update(ctx, *s)
+			},
 		}
-
-		wg.Go(func() {
-			cover, err := c.api.ImageGet(ctx, show.CoverURL)
-			if err != nil {
-				mu.Lock()
-				errs = append(errs, err)
-				mu.Unlock()
-				return
-			}
-			if len(cover) == 0 {
-				return
-			}
-
-			oldCover := []byte{}
-			if show.CoverID != "" {
-				oldCover, err = storage.S.Get(show.CoverID)
-				if err != nil {
-					mu.Lock()
-					errs = append(errs, fmt.Errorf("get cover for %+v | %w", *show, err))
-					mu.Unlock()
-					return
-				}
-			}
-
-			if bytes.Equal(cover, oldCover) {
-				return
-			}
-
-			show.CoverID = uuid.NewString()
-			if err := storage.S.Set(show.CoverID, cover, 0); err != nil {
-				mu.Lock()
-				errs = append(errs, fmt.Errorf("store new cover %+v | %w", *show, err))
-				mu.Unlock()
-				return
-			}
-
-			if err := c.show.Update(ctx, *show); err != nil {
-				mu.Lock()
-				errs = append(errs, err)
-				mu.Unlock()
-				return
-			}
-		})
-	}
-
-	wg.Wait()
-
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
-
-	return nil
-}
-
-func (c *client) showCheck(ctx context.Context, show *model.Show) error {
-	showDB, err := c.show.GetBySpotify(ctx, show.SpotifyID)
-	if err != nil {
-		return err
-	}
-
-	if showDB == nil {
-		return c.show.Create(ctx, show)
-	}
-
-	show.ID = showDB.ID
-
-	if !showDB.EqualEntry(*show) {
-		return c.show.Update(ctx, *show)
-	}
-
-	return nil
+	}))
 }

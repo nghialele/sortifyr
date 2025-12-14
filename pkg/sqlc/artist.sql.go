@@ -7,19 +7,23 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const artistCreate = `-- name: ArtistCreate :one
-INSERT INTO artists (spotify_id, name, followers, popularity)
-VALUES ($1, $2, $3, $4)
+INSERT INTO artists (spotify_id, name, followers, popularity, cover_id, cover_url)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id
 `
 
 type ArtistCreateParams struct {
 	SpotifyID  string
-	Name       string
-	Followers  int32
-	Popularity int32
+	Name       pgtype.Text
+	Followers  pgtype.Int4
+	Popularity pgtype.Int4
+	CoverID    pgtype.Text
+	CoverUrl   pgtype.Text
 }
 
 func (q *Queries) ArtistCreate(ctx context.Context, arg ArtistCreateParams) (int32, error) {
@@ -28,14 +32,86 @@ func (q *Queries) ArtistCreate(ctx context.Context, arg ArtistCreateParams) (int
 		arg.Name,
 		arg.Followers,
 		arg.Popularity,
+		arg.CoverID,
+		arg.CoverUrl,
 	)
 	var id int32
 	err := row.Scan(&id)
 	return id, err
 }
 
+const artistGetAll = `-- name: ArtistGetAll :many
+SELECT id, spotify_id, name, followers, popularity, cover_url, cover_id, updated_at
+FROM artists
+`
+
+func (q *Queries) ArtistGetAll(ctx context.Context) ([]Artist, error) {
+	rows, err := q.db.Query(ctx, artistGetAll)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Artist
+	for rows.Next() {
+		var i Artist
+		if err := rows.Scan(
+			&i.ID,
+			&i.SpotifyID,
+			&i.Name,
+			&i.Followers,
+			&i.Popularity,
+			&i.CoverUrl,
+			&i.CoverID,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const artistGetByAlbum = `-- name: ArtistGetByAlbum :many
+SELECT a.id, a.spotify_id, a.name, a.followers, a.popularity, a.cover_url, a.cover_id, a.updated_at
+FROM artists a
+LEFT JOIN album_artists a_a ON a_a.artist_id = a.id
+WHERE a_a.album_id = $1
+`
+
+func (q *Queries) ArtistGetByAlbum(ctx context.Context, albumID int32) ([]Artist, error) {
+	rows, err := q.db.Query(ctx, artistGetByAlbum, albumID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Artist
+	for rows.Next() {
+		var i Artist
+		if err := rows.Scan(
+			&i.ID,
+			&i.SpotifyID,
+			&i.Name,
+			&i.Followers,
+			&i.Popularity,
+			&i.CoverUrl,
+			&i.CoverID,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const artistGetBySpotify = `-- name: ArtistGetBySpotify :one
-SELECT id, spotify_id, name, followers, popularity
+SELECT id, spotify_id, name, followers, popularity, cover_url, cover_id, updated_at
 FROM artists
 WHERE spotify_id = $1
 `
@@ -49,21 +125,68 @@ func (q *Queries) ArtistGetBySpotify(ctx context.Context, spotifyID string) (Art
 		&i.Name,
 		&i.Followers,
 		&i.Popularity,
+		&i.CoverUrl,
+		&i.CoverID,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
+const artistGetByTrack = `-- name: ArtistGetByTrack :many
+SELECT a.id, a.spotify_id, a.name, a.followers, a.popularity, a.cover_url, a.cover_id, a.updated_at
+FROM artists a
+LEFT JOIN track_artists t_a ON t_a.artist_id = a.id
+WHERE t_a.track_id = $1
+`
+
+func (q *Queries) ArtistGetByTrack(ctx context.Context, trackID int32) ([]Artist, error) {
+	rows, err := q.db.Query(ctx, artistGetByTrack, trackID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Artist
+	for rows.Next() {
+		var i Artist
+		if err := rows.Scan(
+			&i.ID,
+			&i.SpotifyID,
+			&i.Name,
+			&i.Followers,
+			&i.Popularity,
+			&i.CoverUrl,
+			&i.CoverID,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const artistUpdate = `-- name: ArtistUpdate :exec
 UPDATE artists
-SET name = $2, followers = $3, popularity = $4
+SET
+  name = coalesce($2, name),
+  followers = coalesce($3, followers),
+  popularity = coalesce($4, popularity),
+  cover_id = coalesce($5, cover_id),
+  cover_url = coalesce($6, cover_url),
+  updated_at = NOW()
 WHERE id = $1
 `
 
 type ArtistUpdateParams struct {
 	ID         int32
-	Name       string
-	Followers  int32
-	Popularity int32
+	Name       pgtype.Text
+	Followers  pgtype.Int4
+	Popularity pgtype.Int4
+	CoverID    pgtype.Text
+	CoverUrl   pgtype.Text
 }
 
 func (q *Queries) ArtistUpdate(ctx context.Context, arg ArtistUpdateParams) error {
@@ -72,6 +195,8 @@ func (q *Queries) ArtistUpdate(ctx context.Context, arg ArtistUpdateParams) erro
 		arg.Name,
 		arg.Followers,
 		arg.Popularity,
+		arg.CoverID,
+		arg.CoverUrl,
 	)
 	return err
 }

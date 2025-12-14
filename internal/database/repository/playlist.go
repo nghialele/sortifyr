@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/pkg/sqlc"
 	"github.com/topvennie/sortifyr/pkg/utils"
@@ -66,14 +65,14 @@ func (p *Playlist) GetByUserPopulated(ctx context.Context, userID int) ([]*model
 func (p *Playlist) Create(ctx context.Context, playlist *model.Playlist) error {
 	id, err := p.repo.queries(ctx).PlaylistCreate(ctx, sqlc.PlaylistCreateParams{
 		SpotifyID:     playlist.SpotifyID,
-		OwnerUid:      playlist.OwnerUID,
-		Name:          playlist.Name,
-		Description:   pgtype.Text{String: playlist.Description, Valid: playlist.Description != ""},
-		Public:        playlist.Public,
-		TrackAmount:   int32(playlist.TrackAmount),
-		Collaborative: playlist.Collaborative,
-		CoverID:       pgtype.Text{String: playlist.CoverID, Valid: playlist.CoverID != ""},
-		CoverUrl:      pgtype.Text{String: playlist.CoverURL, Valid: playlist.CoverURL != ""},
+		OwnerID:       toInt(playlist.OwnerID),
+		Name:          toString(playlist.Name),
+		Description:   toString(playlist.Description),
+		Public:        toBool(playlist.Public),
+		TrackAmount:   toInt(playlist.TrackAmount),
+		Collaborative: toBool(playlist.Collaborative),
+		CoverID:       toString(playlist.CoverID),
+		CoverUrl:      toString(playlist.CoverURL),
 	})
 	if err != nil {
 		return fmt.Errorf("create playlist %+v | %w", *playlist, err)
@@ -115,24 +114,16 @@ func (p *Playlist) CreateUser(ctx context.Context, user *model.PlaylistUser) err
 func (p *Playlist) Update(ctx context.Context, playlist model.Playlist) error {
 	if err := p.repo.queries(ctx).PlaylistUpdateBySpotify(ctx, sqlc.PlaylistUpdateBySpotifyParams{
 		SpotifyID:     playlist.SpotifyID,
-		OwnerUid:      playlist.OwnerUID,
-		Name:          playlist.Name,
-		Description:   pgtype.Text{String: playlist.Description, Valid: playlist.Description != ""},
-		Public:        playlist.Public,
-		TrackAmount:   int32(playlist.TrackAmount),
-		Collaborative: playlist.Collaborative,
-		CoverID:       pgtype.Text{String: playlist.CoverID, Valid: playlist.CoverID != ""},
-		CoverUrl:      pgtype.Text{String: playlist.CoverURL, Valid: playlist.CoverURL != ""},
+		OwnerID:       toInt(playlist.OwnerID),
+		Name:          toString(playlist.Name),
+		Description:   toString(playlist.Description),
+		Public:        toBool(playlist.Public),
+		TrackAmount:   toInt(playlist.TrackAmount),
+		Collaborative: toBool(playlist.Collaborative),
+		CoverID:       toString(playlist.CoverID),
+		CoverUrl:      toString(playlist.CoverURL),
 	}); err != nil {
 		return fmt.Errorf("update playlist %+v | %w", playlist, err)
-	}
-
-	return nil
-}
-
-func (p *Playlist) Delete(ctx context.Context, id int) error {
-	if err := p.repo.queries(ctx).PlaylistDelete(ctx, int32(id)); err != nil {
-		return fmt.Errorf("delete playlist %d | %w", id, err)
 	}
 
 	return nil

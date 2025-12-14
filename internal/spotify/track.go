@@ -2,132 +2,66 @@ package spotify
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/internal/spotify/api"
 	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
-func (c *client) tracksSync(ctx context.Context, user model.User) (string, error) {
-	directories, err := c.directory.GetByUserPopulated(ctx, user.ID)
-	if err != nil {
-		return "", err
-	}
-
-	playlists, err := c.playlist.GetByUserPopulated(ctx, user.ID)
-	if err != nil {
-		return "", err
-	}
-
-	links, err := c.link.GetAllByUser(ctx, user.ID)
-	if err != nil {
-		return "", err
-	}
-
-	totalAdded := 0
-
-	for _, link := range links {
-		var sources []model.Playlist
-		var targets []model.Playlist
-
-		switch {
-		case link.SourceDirectoryID != 0:
-			directory, ok := utils.SliceFind(directories, func(d *model.Directory) bool { return d.ID == link.SourceDirectoryID })
-			if !ok {
-				return "", fmt.Errorf("database foreign key reference error (source directory) for link %+v", *link)
-			}
-			sources = (*directory).Playlists
-
-		case link.SourcePlaylistID != 0:
-			playlist, ok := utils.SliceFind(playlists, func(p *model.Playlist) bool { return p.ID == link.SourcePlaylistID })
-			if !ok {
-				return "", fmt.Errorf("database foreign key reference error (source playlist) for link %+v", *link)
-			}
-			sources = []model.Playlist{**playlist}
-
-		default:
-			return "", fmt.Errorf("database foreign key reference error (source) for link %+v", *link)
-		}
-
-		switch {
-		case link.TargetDirectoryID != 0:
-			directory, ok := utils.SliceFind(directories, func(d *model.Directory) bool { return d.ID == link.TargetDirectoryID })
-			if !ok {
-				return "", fmt.Errorf("database foreign key reference error (target directory) for link %+v", *link)
-			}
-			targets = (*directory).Playlists
-
-		case link.TargetPlaylistID != 0:
-			playlist, ok := utils.SliceFind(playlists, func(p *model.Playlist) bool { return p.ID == link.TargetPlaylistID })
-			if !ok {
-				return "", fmt.Errorf("database foreign key reference error (target playlist) for link %+v", *link)
-			}
-			targets = []model.Playlist{**playlist}
-
-		default:
-			return "", fmt.Errorf("database foreign key reference error (target) for link %+v", *link)
-		}
-
-		for i := range sources {
-			for j := range targets {
-				added, err := c.trackOneSync(ctx, user, sources[i], targets[j])
-				if err != nil {
-					return "", err
-				}
-
-				totalAdded += added
-			}
-		}
-	}
-
-	return fmt.Sprintf("Added %d", totalAdded), nil
-}
-
-func (c *client) trackOneSync(ctx context.Context, user model.User, source, target model.Playlist) (int, error) {
-	if source.Equal(target) {
-		return 0, nil
-	}
-
-	tracksSource, err := c.track.GetByPlaylist(ctx, source.ID)
-	if err != nil {
-		return 0, err
-	}
-
-	tracksTarget, err := c.track.GetByPlaylist(ctx, target.ID)
-	if err != nil {
-		return 0, err
-	}
-
-	toAdd := make([]model.Track, 0)
-
-	for _, trackSource := range tracksSource {
-		if _, ok := utils.SliceFind(tracksTarget, func(t *model.Track) bool { return t.Equal(*trackSource) }); !ok {
-			toAdd = append(toAdd, *trackSource)
-		}
-	}
-
-	if err := c.api.PlaylistPostTrackAll(ctx, user, target.SpotifyID, toAdd); err != nil {
-		return 0, err
-	}
-
-	return len(toAdd), nil
-}
-
-// trackCheck creates or updates the track if needed
-func (c *client) trackCheck(ctx context.Context, track *model.Track) error {
-	trackDB, err := c.track.GetBySpotify(ctx, track.SpotifyID)
+// trackUpdate updates local track instances to match the spotify data.
+// It updates all tracks, regardless of the user given.
+// However the given user's access token is used.
+func (c *client) trackUpdate(ctx context.Context, user model.User) error {
+	tracksDB, err := c.track.GetAll(ctx)
 	if err != nil {
 		return err
 	}
 
-	if trackDB == nil {
-		return c.track.Create(ctx, track)
+	tracksSpotifyAPI, err := c.api.TrackGetAll(ctx, user, utils.SliceMap(tracksDB, func(t *model.Track) string { return t.SpotifyID }))
+	if err != nil {
+		return nil
 	}
+	tracksSpotify := utils.SliceMap(tracksSpotifyAPI, func(t api.Track) model.Track { return t.ToModel() })
 
-	track.ID = trackDB.ID
+	for i := range tracksSpotify {
+		trackDB, ok := utils.SliceFind(tracksDB, func(t *model.Track) bool { return t.Equal(tracksSpotify[i]) })
+		if !ok {
+			// Track not found
+			continue
+		}
 
-	if !trackDB.EqualEntry(*track) {
-		return c.track.UpdateBySpotify(ctx, *track)
+		tracksSpotify[i].ID = (*trackDB).ID
+
+		// Bring track up to date
+		if !(*trackDB).EqualEntry(tracksSpotify[i]) {
+			if err := c.track.Update(ctx, tracksSpotify[i]); err != nil {
+				return err
+			}
+		}
+
+		// Bring the track artists up to date
+		artistsDB, err := c.artist.GetByTrack(ctx, (*trackDB).ID)
+		if err != nil {
+			return err
+		}
+
+		artistsSpotify := utils.SliceMap(tracksSpotifyAPI[i].Artists, func(a api.Artist) model.Artist { return a.ToModel() })
+
+		if err := syncUserData(syncUserDataStruct[model.Artist]{
+			DB:     utils.SliceDereference(artistsDB),
+			API:    artistsSpotify,
+			Equal:  func(a1, a2 model.Artist) bool { return a1.Equal(a2) },
+			Get:    func(a model.Artist) (*model.Artist, error) { return c.artist.GetBySpotify(ctx, a.SpotifyID) },
+			Create: func(a *model.Artist) error { return c.artist.Create(ctx, a) },
+			CreateUserLink: func(a model.Artist) error {
+				return c.track.CreateArtist(ctx, &model.TrackArtist{TrackID: (*trackDB).ID, ArtistID: a.ID})
+			},
+			DeleteUserLink: func(a model.Artist) error {
+				return c.track.DeleteArtistByArtistTrack(ctx, model.TrackArtist{TrackID: (*trackDB).ID, ArtistID: a.ID})
+			},
+		}); err != nil {
+			return err
+		}
 	}
 
 	return nil

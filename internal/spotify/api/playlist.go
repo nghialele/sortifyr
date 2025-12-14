@@ -21,29 +21,26 @@ func (c *Client) PlaylistGet(ctx context.Context, user model.User, spotifyID str
 	return resp, nil
 }
 
-type playlistAllResponse struct {
+type playlistUserResponse struct {
 	Total int        `json:"total"`
 	Items []Playlist `json:"items"`
 }
 
-func (c *Client) PlaylistGetAll(ctx context.Context, user model.User) ([]Playlist, error) {
+func (c *Client) PlaylistGetUser(ctx context.Context, user model.User) ([]Playlist, error) {
 	playlists := make([]Playlist, 0)
 
 	total := 51
 	limit := 50
-	offset := 0
 
-	for offset+limit < total {
-		var resp playlistAllResponse
+	for i := 0; i < total; i += limit {
+		var resp playlistUserResponse
 
-		if err := c.request(ctx, user, http.MethodGet, fmt.Sprintf("me/playlists?offset=%d&limit=%d", offset, limit), http.NoBody, &resp); err != nil {
-			return nil, fmt.Errorf("get playlists with limit %d and offset %d | %w", limit, offset, err)
+		if err := c.request(ctx, user, http.MethodGet, fmt.Sprintf("me/playlists?offset=%d&limit=%d", i, limit), http.NoBody, &resp); err != nil {
+			return nil, fmt.Errorf("get playlists with limit %d and offset %d | %w", limit, i, err)
 		}
 
 		playlists = append(playlists, resp.Items...)
 		total = resp.Total
-
-		offset += limit
 	}
 
 	return playlists, nil
@@ -63,19 +60,16 @@ func (c *Client) PlaylistGetTrackAll(ctx context.Context, user model.User, spoti
 
 	total := 51
 	limit := 50
-	offset := 0
 
-	for offset+limit < total {
+	for i := 0; i < total; i += limit {
 		var resp playlistTrackResponse
 
-		if err := c.request(ctx, user, http.MethodGet, fmt.Sprintf("playlists/%s/tracks?offset=%d&limit=%d", spotifyID, offset, limit), http.NoBody, &resp); err != nil {
-			return nil, fmt.Errorf("get playlist tracks with limit %d and offset %d | %w", limit, offset, err)
+		if err := c.request(ctx, user, http.MethodGet, fmt.Sprintf("playlists/%s/tracks?offset=%d&limit=%d", spotifyID, i, limit), http.NoBody, &resp); err != nil {
+			return nil, fmt.Errorf("get playlist tracks with limit %d and offset %d | %w", limit, i, err)
 		}
 
 		tracks = append(tracks, utils.SliceMap(resp.Items, func(t playlistTrackAPI) Track { return t.Track })...)
 		total = resp.Total
-
-		offset += limit
 	}
 
 	return tracks, nil
@@ -90,10 +84,7 @@ func (c *Client) PlaylistPostTrackAll(ctx context.Context, user model.User, spot
 	total := len(tracks)
 
 	for current < total {
-		end := current + 100
-		if end > total {
-			end = total
-		}
+		end := min(current+100, total)
 
 		payload := playlistTrackPayload{
 			URIs: utils.SliceMap(tracks[current:end], func(t model.Track) string { return "spotify:track:" + t.SpotifyID }),

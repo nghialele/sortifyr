@@ -1,6 +1,10 @@
 package model
 
-import "github.com/topvennie/sortifyr/pkg/sqlc"
+import (
+	"time"
+
+	"github.com/topvennie/sortifyr/pkg/sqlc"
+)
 
 type Album struct {
 	ID          int
@@ -10,26 +14,22 @@ type Album struct {
 	Popularity  int
 	CoverID     string
 	CoverURL    string
+	UpdatedAt   time.Time
+
+	// Non db fields
+	Artists []Artist
 }
 
 func AlbumModel(a sqlc.Album) *Album {
-	coverID := ""
-	if a.CoverID.Valid {
-		coverID = a.CoverID.String
-	}
-	coverURL := ""
-	if a.CoverUrl.Valid {
-		coverURL = a.CoverUrl.String
-	}
-
 	return &Album{
 		ID:          int(a.ID),
 		SpotifyID:   a.SpotifyID,
-		Name:        a.Name,
-		TrackAmount: int(a.TrackAmount),
-		Popularity:  int(a.Popularity),
-		CoverID:     coverID,
-		CoverURL:    coverURL,
+		Name:        fromString(a.Name),
+		TrackAmount: fromInt(a.TrackAmount),
+		Popularity:  fromInt(a.Popularity),
+		CoverID:     fromString(a.CoverID),
+		CoverURL:    fromString(a.CoverUrl),
+		UpdatedAt:   fromTime(a.UpdatedAt),
 	}
 }
 
@@ -38,7 +38,7 @@ func (a *Album) Equal(a2 Album) bool {
 }
 
 func (a *Album) EqualEntry(a2 Album) bool {
-	return a.Name == a2.Name && a.TrackAmount == a2.TrackAmount && a.Popularity == a2.Popularity
+	return a.Name == a2.Name && a.TrackAmount == a2.TrackAmount && a.Popularity == a2.Popularity && a.CoverURL != a2.CoverURL
 }
 
 type AlbumUser struct {
@@ -47,10 +47,8 @@ type AlbumUser struct {
 	AlbumID int
 }
 
-func AlbumUserModel(a sqlc.AlbumUser) *AlbumUser {
-	return &AlbumUser{
-		ID:      int(a.ID),
-		UserID:  int(a.UserID),
-		AlbumID: int(a.AlbumID),
-	}
+type AlbumArtist struct {
+	ID       int
+	AlbumID  int
+	ArtistID int
 }

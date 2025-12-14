@@ -35,7 +35,7 @@ func (c *client) historySync(ctx context.Context, user model.User) (string, erro
 	// Create history
 	for _, h := range toCreate {
 		if err := c.historyOneSync(ctx, user, h); err != nil {
-			return "", nil
+			return "", err
 		}
 	}
 
@@ -45,59 +45,128 @@ func (c *client) historySync(ctx context.Context, user model.User) (string, erro
 func (c *client) historyOneSync(ctx context.Context, user model.User, history api.History) error {
 	historyModel := history.ToModel(user)
 
-	trackModel := history.Track.ToModel()
-	if err := c.trackCheck(ctx, &trackModel); err != nil {
+	track := model.Track{SpotifyID: history.Track.SpotifyID}
+	if err := c.historyTrackCheck(ctx, &track); err != nil {
 		return err
 	}
-	historyModel.TrackID = trackModel.ID
+	historyModel.TrackID = track.ID
 
 	contextSpotifyID := uriToID(history.Context.URI)
 
 	switch history.Context.Type {
 	case "album":
-		album, err := c.api.AlbumGet(ctx, user, contextSpotifyID)
-		if err != nil {
+		album := model.Album{SpotifyID: contextSpotifyID}
+		if err := c.historyAlbumCheck(ctx, &album); err != nil {
 			return err
 		}
-		albumModel := album.ToModel()
-		if err := c.albumCheck(ctx, &albumModel); err != nil {
-			return err
-		}
-		historyModel.AlbumID = albumModel.ID
+		historyModel.AlbumID = album.ID
 	case "artist":
-		artist, err := c.api.ArtistGet(ctx, user, contextSpotifyID)
-		if err != nil {
+		artist := model.Artist{SpotifyID: contextSpotifyID}
+		if err := c.historyArtistCheck(ctx, &artist); err != nil {
 			return err
 		}
-		artistModel := artist.ToModel()
-		if err := c.artistCheck(ctx, &artistModel); err != nil {
-			return err
-		}
-		historyModel.ArtistID = artistModel.ID
+		historyModel.ArtistID = artist.ID
 	case "playlist":
-		playlist, err := c.api.PlaylistGet(ctx, user, contextSpotifyID)
-		if err != nil {
+		playlist := model.Playlist{SpotifyID: contextSpotifyID}
+		if err := c.historyPlaylistCheck(ctx, &playlist); err != nil {
 			return err
 		}
-		playlistModel := playlist.ToModel()
-		if err := c.playlistCheck(ctx, &playlistModel); err != nil {
-			return err
-		}
-		historyModel.PlaylistID = playlistModel.ID
+		historyModel.PlaylistID = playlist.ID
 	case "show":
-		show, err := c.api.ShowGet(ctx, user, contextSpotifyID)
-		if err != nil {
+		show := model.Show{SpotifyID: contextSpotifyID}
+		if err := c.historyShowCheck(ctx, &show); err != nil {
 			return err
 		}
-		showModel := show.ToModel()
-		if err := c.showCheck(ctx, &showModel); err != nil {
-			return err
-		}
-		historyModel.ShowID = showModel.ID
+		historyModel.ShowID = show.ID
 	}
 
 	if err := c.history.Create(ctx, &historyModel); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (c *client) historyTrackCheck(ctx context.Context, track *model.Track) error {
+	trackDB, err := c.track.GetBySpotify(ctx, track.SpotifyID)
+	if err != nil {
+		return err
+	}
+
+	if trackDB == nil {
+		if err := c.track.Create(ctx, track); err != nil {
+			return err
+		}
+	} else {
+		track.ID = trackDB.ID
+	}
+
+	return nil
+}
+
+func (c *client) historyArtistCheck(ctx context.Context, artist *model.Artist) error {
+	artistDB, err := c.artist.GetBySpotify(ctx, artist.SpotifyID)
+	if err != nil {
+		return err
+	}
+
+	if artistDB == nil {
+		if err := c.artist.Create(ctx, artist); err != nil {
+			return err
+		}
+	} else {
+		artist.ID = artistDB.ID
+	}
+
+	return nil
+}
+
+func (c *client) historyAlbumCheck(ctx context.Context, album *model.Album) error {
+	albumDB, err := c.album.GetBySpotify(ctx, album.SpotifyID)
+	if err != nil {
+		return err
+	}
+
+	if albumDB == nil {
+		if err := c.album.Create(ctx, album); err != nil {
+			return err
+		}
+	} else {
+		album.ID = albumDB.ID
+	}
+
+	return nil
+}
+
+func (c *client) historyPlaylistCheck(ctx context.Context, playlist *model.Playlist) error {
+	playlistDB, err := c.playlist.GetBySpotify(ctx, playlist.SpotifyID)
+	if err != nil {
+		return err
+	}
+
+	if playlistDB == nil {
+		if err := c.playlist.Create(ctx, playlist); err != nil {
+			return err
+		}
+	} else {
+		playlist.ID = playlistDB.ID
+	}
+
+	return nil
+}
+
+func (c *client) historyShowCheck(ctx context.Context, show *model.Show) error {
+	showDB, err := c.show.GetBySpotify(ctx, show.SpotifyID)
+	if err != nil {
+		return err
+	}
+
+	if showDB == nil {
+		if err := c.show.Create(ctx, show); err != nil {
+			return err
+		}
+	} else {
+		show.ID = showDB.ID
 	}
 
 	return nil

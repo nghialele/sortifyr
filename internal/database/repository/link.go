@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/pkg/sqlc"
 	"github.com/topvennie/sortifyr/pkg/utils"
@@ -36,10 +35,10 @@ func (l *Link) GetAllByUser(ctx context.Context, userID int) ([]*model.Link, err
 
 func (l *Link) Create(ctx context.Context, link *model.Link) error {
 	id, err := l.repo.queries(ctx).LinkCreate(ctx, sqlc.LinkCreateParams{
-		SourceDirectoryID: pgtype.Int4{Int32: int32(link.SourceDirectoryID), Valid: link.SourceDirectoryID != 0},
-		SourcePlaylistID:  pgtype.Int4{Int32: int32(link.SourcePlaylistID), Valid: link.SourcePlaylistID != 0},
-		TargetDirectoryID: pgtype.Int4{Int32: int32(link.TargetDirectoryID), Valid: link.TargetDirectoryID != 0},
-		TargetPlaylistID:  pgtype.Int4{Int32: int32(link.TargetPlaylistID), Valid: link.TargetPlaylistID != 0},
+		SourceDirectoryID: toInt(link.SourceDirectoryID),
+		SourcePlaylistID:  toInt(link.SourcePlaylistID),
+		TargetDirectoryID: toInt(link.TargetDirectoryID),
+		TargetPlaylistID:  toInt(link.TargetPlaylistID),
 	})
 	if err != nil {
 		return fmt.Errorf("create link %+v | %w", *link, err)
@@ -53,10 +52,10 @@ func (l *Link) Create(ctx context.Context, link *model.Link) error {
 func (l *Link) Update(ctx context.Context, link model.Link) error {
 	if err := l.repo.queries(ctx).LinkUpdate(ctx, sqlc.LinkUpdateParams{
 		ID:                int32(link.ID),
-		SourceDirectoryID: pgtype.Int4{Int32: int32(link.SourceDirectoryID), Valid: link.SourceDirectoryID != 0},
-		SourcePlaylistID:  pgtype.Int4{Int32: int32(link.SourcePlaylistID), Valid: link.SourcePlaylistID != 0},
-		TargetDirectoryID: pgtype.Int4{Int32: int32(link.TargetDirectoryID), Valid: link.TargetDirectoryID != 0},
-		TargetPlaylistID:  pgtype.Int4{Int32: int32(link.TargetPlaylistID), Valid: link.TargetPlaylistID != 0},
+		SourceDirectoryID: toInt(link.SourceDirectoryID),
+		SourcePlaylistID:  toInt(link.SourcePlaylistID),
+		TargetDirectoryID: toInt(link.TargetDirectoryID),
+		TargetPlaylistID:  toInt(link.TargetPlaylistID),
 	}); err != nil {
 		return fmt.Errorf("update link %+v | %w", link, err)
 	}

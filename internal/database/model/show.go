@@ -1,6 +1,10 @@
 package model
 
-import "github.com/topvennie/sortifyr/pkg/sqlc"
+import (
+	"time"
+
+	"github.com/topvennie/sortifyr/pkg/sqlc"
+)
 
 type Show struct {
 	ID            int
@@ -9,25 +13,18 @@ type Show struct {
 	EpisodeAmount int
 	CoverID       string
 	CoverURL      string
+	UpdatedAt     time.Time
 }
 
 func ShowModel(s sqlc.Show) *Show {
-	coverID := ""
-	if s.CoverID.Valid {
-		coverID = s.CoverID.String
-	}
-	coverURL := ""
-	if s.CoverUrl.Valid {
-		coverURL = s.CoverUrl.String
-	}
-
 	return &Show{
 		ID:            int(s.ID),
 		SpotifyID:     s.SpotifyID,
-		Name:          s.Name,
-		EpisodeAmount: int(s.EpisodeAmount),
-		CoverID:       coverID,
-		CoverURL:      coverURL,
+		Name:          fromString(s.Name),
+		EpisodeAmount: fromInt(s.EpisodeAmount),
+		CoverID:       fromString(s.CoverID),
+		CoverURL:      fromString(s.CoverUrl),
+		UpdatedAt:     fromTime(s.UpdatedAt),
 	}
 }
 
@@ -36,19 +33,11 @@ func (s *Show) Equal(s2 Show) bool {
 }
 
 func (s *Show) EqualEntry(s2 Show) bool {
-	return s.Name == s2.Name && s.EpisodeAmount == s2.EpisodeAmount
+	return s.Name == s2.Name && s.EpisodeAmount == s2.EpisodeAmount && s.CoverURL == s2.CoverURL
 }
 
 type ShowUser struct {
 	ID     int
 	UserID int
 	ShowID int
-}
-
-func ShowUserModel(s sqlc.ShowUser) *ShowUser {
-	return &ShowUser{
-		ID:     int(s.ID),
-		UserID: int(s.UserID),
-		ShowID: int(s.ShowID),
-	}
 }

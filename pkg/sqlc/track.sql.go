@@ -7,6 +7,8 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const trackCreate = `-- name: TrackCreate :one
@@ -17,8 +19,8 @@ RETURNING id
 
 type TrackCreateParams struct {
 	SpotifyID  string
-	Name       string
-	Popularity int32
+	Name       pgtype.Text
+	Popularity pgtype.Int4
 }
 
 func (q *Queries) TrackCreate(ctx context.Context, arg TrackCreateParams) (int32, error) {
@@ -28,8 +30,39 @@ func (q *Queries) TrackCreate(ctx context.Context, arg TrackCreateParams) (int32
 	return id, err
 }
 
+const trackGetAll = `-- name: TrackGetAll :many
+SELECT id, spotify_id, name, popularity, updated_at
+FROM tracks
+`
+
+func (q *Queries) TrackGetAll(ctx context.Context) ([]Track, error) {
+	rows, err := q.db.Query(ctx, trackGetAll)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Track
+	for rows.Next() {
+		var i Track
+		if err := rows.Scan(
+			&i.ID,
+			&i.SpotifyID,
+			&i.Name,
+			&i.Popularity,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const trackGetByPlaylist = `-- name: TrackGetByPlaylist :many
-SELECT t.id, t.spotify_id, t.name, t.popularity
+SELECT t.id, t.spotify_id, t.name, t.popularity, t.updated_at
 FROM tracks t
 LEFT JOIN playlist_tracks p_t ON p_t.track_id = t.id
 WHERE p_t.playlist_id = $1
@@ -49,6 +82,7 @@ func (q *Queries) TrackGetByPlaylist(ctx context.Context, playlistID int32) ([]T
 			&i.SpotifyID,
 			&i.Name,
 			&i.Popularity,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -61,7 +95,7 @@ func (q *Queries) TrackGetByPlaylist(ctx context.Context, playlistID int32) ([]T
 }
 
 const trackGetBySpotify = `-- name: TrackGetBySpotify :one
-SELECT id, spotify_id, name, popularity
+SELECT id, spotify_id, name, popularity, updated_at
 FROM tracks
 WHERE spotify_id = $1
 `
@@ -74,23 +108,27 @@ func (q *Queries) TrackGetBySpotify(ctx context.Context, spotifyID string) (Trac
 		&i.SpotifyID,
 		&i.Name,
 		&i.Popularity,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const trackUpdateBySpotify = `-- name: TrackUpdateBySpotify :exec
+const trackUpdate = `-- name: TrackUpdate :exec
 UPDATE tracks
-SET name = $2, popularity = $3
-WHERE spotify_id = $1
+SET
+  name = coalesce($2, name),
+  popularity = coalesce($3, popularity),
+  updated_at = NOW()
+WHERE id = $1
 `
 
-type TrackUpdateBySpotifyParams struct {
-	SpotifyID  string
-	Name       string
-	Popularity int32
+type TrackUpdateParams struct {
+	ID         int32
+	Name       pgtype.Text
+	Popularity pgtype.Int4
 }
 
-func (q *Queries) TrackUpdateBySpotify(ctx context.Context, arg TrackUpdateBySpotifyParams) error {
-	_, err := q.db.Exec(ctx, trackUpdateBySpotify, arg.SpotifyID, arg.Name, arg.Popularity)
+func (q *Queries) TrackUpdate(ctx context.Context, arg TrackUpdateParams) error {
+	_, err := q.db.Exec(ctx, trackUpdate, arg.ID, arg.Name, arg.Popularity)
 	return err
 }

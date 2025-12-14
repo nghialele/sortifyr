@@ -56,11 +56,18 @@ func (ns NullTaskResult) Value() (driver.Value, error) {
 type Album struct {
 	ID          int32
 	SpotifyID   string
-	Name        string
-	TrackAmount int32
-	Popularity  int32
+	Name        pgtype.Text
+	TrackAmount pgtype.Int4
+	Popularity  pgtype.Int4
 	CoverUrl    pgtype.Text
 	CoverID     pgtype.Text
+	UpdatedAt   pgtype.Timestamptz
+}
+
+type AlbumArtist struct {
+	ID       int32
+	ArtistID int32
+	AlbumID  int32
 }
 
 type AlbumUser struct {
@@ -72,9 +79,12 @@ type AlbumUser struct {
 type Artist struct {
 	ID         int32
 	SpotifyID  string
-	Name       string
-	Followers  int32
-	Popularity int32
+	Name       pgtype.Text
+	Followers  pgtype.Int4
+	Popularity pgtype.Int4
+	CoverUrl   pgtype.Text
+	CoverID    pgtype.Text
+	UpdatedAt  pgtype.Timestamptz
 }
 
 type Directory struct {
@@ -112,15 +122,15 @@ type Link struct {
 type Playlist struct {
 	ID            int32
 	SpotifyID     string
-	OwnerUid      string
-	Name          string
+	Name          pgtype.Text
 	Description   pgtype.Text
-	Public        bool
-	TrackAmount   int32
-	Collaborative bool
+	Public        pgtype.Bool
+	TrackAmount   pgtype.Int4
+	Collaborative pgtype.Bool
 	CoverID       pgtype.Text
 	CoverUrl      pgtype.Text
-	DeletedAt     pgtype.Timestamptz
+	OwnerID       pgtype.Int4
+	UpdatedAt     pgtype.Timestamptz
 }
 
 type PlaylistTrack struct {
@@ -138,10 +148,11 @@ type PlaylistUser struct {
 type Show struct {
 	ID            int32
 	SpotifyID     string
-	EpisodeAmount int32
-	Name          string
+	EpisodeAmount pgtype.Int4
+	Name          pgtype.Text
 	CoverUrl      pgtype.Text
 	CoverID       pgtype.Text
+	UpdatedAt     pgtype.Timestamptz
 }
 
 type ShowUser struct {
@@ -170,8 +181,15 @@ type TaskRun struct {
 type Track struct {
 	ID         int32
 	SpotifyID  string
-	Name       string
-	Popularity int32
+	Name       pgtype.Text
+	Popularity pgtype.Int4
+	UpdatedAt  pgtype.Timestamptz
+}
+
+type TrackArtist struct {
+	ID       int32
+	ArtistID int32
+	TrackID  int32
 }
 
 type User struct {

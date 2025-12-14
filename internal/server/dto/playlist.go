@@ -34,7 +34,7 @@ func (p Playlist) ToModel() *model.Playlist {
 	return &model.Playlist{
 		ID:            p.ID,
 		SpotifyID:     p.SpotifyID,
-		OwnerUID:      p.Owner.UID,
+		OwnerID:       p.Owner.ID,
 		Name:          p.Name,
 		Description:   p.Description,
 		Public:        p.Public,

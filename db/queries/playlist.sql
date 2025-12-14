@@ -6,27 +6,32 @@ WHERE id = $1;
 -- name: PlaylistGetBySpotify :one
 SELECT *
 FROM playlists
-WHERE spotify_id = $1 AND deleted_at IS NULL;
+WHERE spotify_id = $1;
 
 -- name: PlaylistGetByUserWithOwner :many
 SELECT sqlc.embed(p), sqlc.embed(u)
 FROM playlists p
 LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
-LEFT JOIN users u ON u.uid = p.owner_uid
-WHERE pu.user_id = $1 AND deleted_at IS NULL
+LEFT JOIN users u ON u.id = p.owner_id
+WHERE pu.user_id = $1
 ORDER BY p.name;
 
 -- name: PlaylistCreate :one
-INSERT INTO playlists (spotify_id, owner_uid, name, description, public, track_amount, collaborative, cover_id, cover_url)
+INSERT INTO playlists (spotify_id, owner_id, name, description, public, track_amount, collaborative, cover_id, cover_url)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING id;
 
 -- name: PlaylistUpdateBySpotify :exec
 UPDATE playlists
-SET owner_uid = $2, name = $3, description = $4, public = $5, track_amount = $6, collaborative = $7, cover_id = $8, cover_url = $9
+SET 
+  owner_id = coalesce(sqlc.narg('owner_id'), owner_id),
+  name = coalesce(sqlc.narg('name'), name),
+  description = coalesce(sqlc.narg('description'), description),
+  public = coalesce(sqlc.narg('public'), public),
+  track_amount = coalesce(sqlc.narg('track_amount'), track_amount),
+  collaborative = coalesce(sqlc.narg('collaborative'), collaborative),
+  cover_id = coalesce(sqlc.narg('cover_id'), cover_id),
+  cover_url = coalesce(sqlc.narg('cover_url'), cover_url),
+  updated_at = NOW()
 WHERE spotify_id = $1;
 
--- name: PlaylistDelete :exec
-UPDATE playlists
-SET deleted_at = NOW()
-WHERE id = $1;

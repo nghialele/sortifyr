@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/pkg/sqlc"
 	"github.com/topvennie/sortifyr/pkg/utils"
@@ -111,10 +110,10 @@ func (t *Task) CreateRun(ctx context.Context, task *model.Task) error {
 	id, err := t.repo.queries(ctx).TaskRunCreate(ctx, sqlc.TaskRunCreateParams{
 		TaskUid:  task.UID,
 		UserID:   int32(task.UserID),
-		RunAt:    pgtype.Timestamptz{Time: task.RunAt, Valid: !task.RunAt.IsZero()},
-		Message:  pgtype.Text{String: task.Message, Valid: task.Message != ""},
+		RunAt:    toTime(task.RunAt),
+		Message:  toString(task.Message),
 		Result:   sqlc.TaskResult(task.Result),
-		Error:    pgtype.Text{String: errStr, Valid: errStr != ""},
+		Error:    toString(errStr),
 		Duration: task.Duration.Nanoseconds(),
 	})
 	if err != nil {

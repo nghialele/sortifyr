@@ -1,3 +1,7 @@
+-- name: TrackGetAll :many
+SELECT *
+FROM tracks;
+
 -- name: TrackGetBySpotify :one
 SELECT *
 FROM tracks
@@ -14,7 +18,10 @@ INSERT INTO tracks (spotify_id, name, popularity)
 VALUES ($1, $2, $3)
 RETURNING id;
 
--- name: TrackUpdateBySpotify :exec
+-- name: TrackUpdate :exec
 UPDATE tracks
-SET name = $2, popularity = $3
-WHERE spotify_id = $1;
+SET
+  name = coalesce(sqlc.narg('name'), name),
+  popularity = coalesce(sqlc.narg('popularity'), popularity),
+  updated_at = NOW()
+WHERE id = $1;

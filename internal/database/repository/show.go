@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/pkg/sqlc"
 	"github.com/topvennie/sortifyr/pkg/utils"
@@ -20,6 +19,18 @@ func (r *Repository) NewShow() *Show {
 	return &Show{
 		repo: *r,
 	}
+}
+
+func (s *Show) GetAll(ctx context.Context) ([]*model.Show, error) {
+	shows, err := s.repo.queries(ctx).ShowGetAll(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get all shows %w", err)
+	}
+
+	return utils.SliceMap(shows, model.ShowModel), nil
 }
 
 func (s *Show) GetBySpotify(ctx context.Context, spotifyID string) (*model.Show, error) {
@@ -49,10 +60,10 @@ func (s *Show) GetByUser(ctx context.Context, userID int) ([]*model.Show, error)
 func (s *Show) Create(ctx context.Context, show *model.Show) error {
 	id, err := s.repo.queries(ctx).ShowCreate(ctx, sqlc.ShowCreateParams{
 		SpotifyID:     show.SpotifyID,
-		Name:          show.Name,
-		EpisodeAmount: int32(show.EpisodeAmount),
-		CoverID:       pgtype.Text{String: show.CoverID, Valid: show.CoverID != ""},
-		CoverUrl:      pgtype.Text{String: show.CoverURL, Valid: show.CoverURL != ""},
+		Name:          toString(show.Name),
+		EpisodeAmount: toInt(show.EpisodeAmount),
+		CoverID:       toString(show.CoverID),
+		CoverUrl:      toString(show.CoverURL),
 	})
 	if err != nil {
 		return fmt.Errorf("create show %+v | %w", *show, err)
@@ -80,10 +91,10 @@ func (s *Show) CreateUser(ctx context.Context, user *model.ShowUser) error {
 func (s *Show) Update(ctx context.Context, show model.Show) error {
 	if err := s.repo.queries(ctx).ShowUpdate(ctx, sqlc.ShowUpdateParams{
 		ID:            int32(show.ID),
-		Name:          show.Name,
-		EpisodeAmount: int32(show.EpisodeAmount),
-		CoverID:       pgtype.Text{String: show.CoverID, Valid: show.CoverID != ""},
-		CoverUrl:      pgtype.Text{String: show.CoverURL, Valid: show.CoverURL != ""},
+		Name:          toString(show.Name),
+		EpisodeAmount: toInt(show.EpisodeAmount),
+		CoverID:       toString(show.CoverID),
+		CoverUrl:      toString(show.CoverURL),
 	}); err != nil {
 		return fmt.Errorf("update show %+v | %w", show, err)
 	}

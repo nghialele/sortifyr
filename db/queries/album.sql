@@ -1,3 +1,7 @@
+-- name: AlbumGetAll :many
+SELECT *
+FROM albums;
+
 -- name: AlbumGetBySpotify :one
 SELECT *
 FROM albums
@@ -16,5 +20,11 @@ RETURNING id;
 
 -- name: AlbumUpdate :exec
 UPDATE albums
-SET name = $2, track_amount = $3, popularity = $4, cover_id = $5, cover_url = $6
+SET 
+  name = coalesce(sqlc.narg('name'), name),
+  track_amount = coalesce(sqlc.narg('track_amount'), track_amount),
+  popularity = coalesce(sqlc.narg('popularity'), popularity),
+  cover_id = coalesce(sqlc.narg('cover_id'), cover_id),
+  cover_url = coalesce(sqlc.narg('cover_url'), cover_url),
+  updated_at = NOW()
 WHERE id = $1;

@@ -42,41 +42,6 @@ func (q *Queries) HistoryCreate(ctx context.Context, arg HistoryCreateParams) (i
 	return id, err
 }
 
-const historyGetByPlaylist = `-- name: HistoryGetByPlaylist :many
-SELECT id, user_id, track_id, played_at, album_id, artist_id, playlist_id, show_id
-FROM history
-WHERE playlist_id = $1
-`
-
-func (q *Queries) HistoryGetByPlaylist(ctx context.Context, playlistID pgtype.Int4) ([]History, error) {
-	rows, err := q.db.Query(ctx, historyGetByPlaylist, playlistID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []History
-	for rows.Next() {
-		var i History
-		if err := rows.Scan(
-			&i.ID,
-			&i.UserID,
-			&i.TrackID,
-			&i.PlayedAt,
-			&i.AlbumID,
-			&i.ArtistID,
-			&i.PlaylistID,
-			&i.ShowID,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const historyGetLatestByUser = `-- name: HistoryGetLatestByUser :one
 SELECT id, user_id, track_id, played_at, album_id, artist_id, playlist_id, show_id
 FROM history

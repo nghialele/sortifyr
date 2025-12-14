@@ -1,3 +1,7 @@
+-- name: ShowGetAll :many
+SELECT *
+FROM shows;
+
 -- name: ShowGetBySpotify :one
 SELECT *
 FROM shows
@@ -16,5 +20,10 @@ RETURNING id;
 
 -- name: ShowUpdate :exec
 UPDATE shows
-SET name = $2, episode_amount = $3, cover_id = $4, cover_url = $5
+SET
+  name = coalesce(sqlc.narg('name'), name),
+  episode_amount = coalesce(sqlc.narg('episode_amount'), episode_amount),
+  cover_id = coalesce(sqlc.narg('cover_id'), cover_id),
+  cover_url = coalesce(sqlc.narg('cover_url'), cover_url),
+  updated_at = NOW()
 WHERE id = $1;

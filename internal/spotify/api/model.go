@@ -4,14 +4,16 @@ import (
 	"time"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
 type Album struct {
-	SpotifyID   string  `json:"id"`
-	Name        string  `json:"name"`
-	TrackAmount int     `json:"total_tracks"`
-	Popularity  int     `json:"popularity"`
-	Images      []Image `json:"images"`
+	SpotifyID   string   `json:"id"`
+	Name        string   `json:"name"`
+	TrackAmount int      `json:"total_tracks"`
+	Popularity  int      `json:"popularity"`
+	Images      []Image  `json:"images"`
+	Artists     []Artist `json:"artists"`
 }
 
 func (a Album) ToModel() model.Album {
@@ -39,15 +41,26 @@ type Artist struct {
 	Followers struct {
 		Total int `json:"total"`
 	} `json:"followers"`
-	Popularity int `json:"popularity"`
+	Popularity int     `json:"popularity"`
+	Images     []Image `json:"images"`
 }
 
 func (a Artist) ToModel() model.Artist {
+	url := ""
+	maxWidth := -1
+	for _, image := range a.Images {
+		if image.Width > maxWidth {
+			url = image.URL
+			maxWidth = image.Width
+		}
+	}
+
 	return model.Artist{
 		SpotifyID:  a.SpotifyID,
 		Name:       a.Name,
 		Followers:  a.Followers.Total,
 		Popularity: a.Popularity,
+		CoverURL:   url,
 	}
 }
 
@@ -103,7 +116,6 @@ func (p *Playlist) ToModel() model.Playlist {
 
 	return model.Playlist{
 		SpotifyID:     p.SpotifyID,
-		OwnerUID:      p.Owner.UID,
 		Name:          p.Name,
 		Description:   p.Description,
 		Public:        p.Public,
@@ -143,9 +155,10 @@ func (s Show) ToModel() model.Show {
 }
 
 type Track struct {
-	SpotifyID  string `json:"id"`
-	Name       string `json:"name"`
-	Popularity int    `json:"popularity"`
+	SpotifyID  string   `json:"id"`
+	Name       string   `json:"name"`
+	Popularity int      `json:"popularity"`
+	Artists    []Artist `json:"artists"`
 }
 
 func (t *Track) ToModel() model.Track {
@@ -153,5 +166,6 @@ func (t *Track) ToModel() model.Track {
 		SpotifyID:  t.SpotifyID,
 		Name:       t.Name,
 		Popularity: t.Popularity,
+		Artists:    utils.SliceMap(t.Artists, func(a Artist) model.Artist { return a.ToModel() }),
 	}
 }

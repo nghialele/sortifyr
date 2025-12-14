@@ -19,8 +19,8 @@ RETURNING id
 
 type ShowCreateParams struct {
 	SpotifyID     string
-	EpisodeAmount int32
-	Name          string
+	EpisodeAmount pgtype.Int4
+	Name          pgtype.Text
 	CoverID       pgtype.Text
 	CoverUrl      pgtype.Text
 }
@@ -38,8 +38,41 @@ func (q *Queries) ShowCreate(ctx context.Context, arg ShowCreateParams) (int32, 
 	return id, err
 }
 
+const showGetAll = `-- name: ShowGetAll :many
+SELECT id, spotify_id, episode_amount, name, cover_url, cover_id, updated_at
+FROM shows
+`
+
+func (q *Queries) ShowGetAll(ctx context.Context) ([]Show, error) {
+	rows, err := q.db.Query(ctx, showGetAll)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Show
+	for rows.Next() {
+		var i Show
+		if err := rows.Scan(
+			&i.ID,
+			&i.SpotifyID,
+			&i.EpisodeAmount,
+			&i.Name,
+			&i.CoverUrl,
+			&i.CoverID,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const showGetBySpotify = `-- name: ShowGetBySpotify :one
-SELECT id, spotify_id, episode_amount, name, cover_url, cover_id
+SELECT id, spotify_id, episode_amount, name, cover_url, cover_id, updated_at
 FROM shows
 WHERE spotify_id = $1
 `
@@ -54,12 +87,13 @@ func (q *Queries) ShowGetBySpotify(ctx context.Context, spotifyID string) (Show,
 		&i.Name,
 		&i.CoverUrl,
 		&i.CoverID,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const showGetByUser = `-- name: ShowGetByUser :many
-SELECT s.id, s.spotify_id, s.episode_amount, s.name, s.cover_url, s.cover_id
+SELECT s.id, s.spotify_id, s.episode_amount, s.name, s.cover_url, s.cover_id, s.updated_at
 FROM shows s
 LEFT JOIN show_users su on su.show_id = s.id
 WHERE su.user_id = $1
@@ -81,6 +115,7 @@ func (q *Queries) ShowGetByUser(ctx context.Context, userID int32) ([]Show, erro
 			&i.Name,
 			&i.CoverUrl,
 			&i.CoverID,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -94,14 +129,19 @@ func (q *Queries) ShowGetByUser(ctx context.Context, userID int32) ([]Show, erro
 
 const showUpdate = `-- name: ShowUpdate :exec
 UPDATE shows
-SET name = $2, episode_amount = $3, cover_id = $4, cover_url = $5
+SET
+  name = coalesce($2, name),
+  episode_amount = coalesce($3, episode_amount),
+  cover_id = coalesce($4, cover_id),
+  cover_url = coalesce($5, cover_url),
+  updated_at = NOW()
 WHERE id = $1
 `
 
 type ShowUpdateParams struct {
 	ID            int32
-	Name          string
-	EpisodeAmount int32
+	Name          pgtype.Text
+	EpisodeAmount pgtype.Int4
 	CoverID       pgtype.Text
 	CoverUrl      pgtype.Text
 }

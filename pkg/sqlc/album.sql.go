@@ -19,9 +19,9 @@ RETURNING id
 
 type AlbumCreateParams struct {
 	SpotifyID   string
-	Name        string
-	TrackAmount int32
-	Popularity  int32
+	Name        pgtype.Text
+	TrackAmount pgtype.Int4
+	Popularity  pgtype.Int4
 	CoverID     pgtype.Text
 	CoverUrl    pgtype.Text
 }
@@ -40,8 +40,42 @@ func (q *Queries) AlbumCreate(ctx context.Context, arg AlbumCreateParams) (int32
 	return id, err
 }
 
+const albumGetAll = `-- name: AlbumGetAll :many
+SELECT id, spotify_id, name, track_amount, popularity, cover_url, cover_id, updated_at
+FROM albums
+`
+
+func (q *Queries) AlbumGetAll(ctx context.Context) ([]Album, error) {
+	rows, err := q.db.Query(ctx, albumGetAll)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Album
+	for rows.Next() {
+		var i Album
+		if err := rows.Scan(
+			&i.ID,
+			&i.SpotifyID,
+			&i.Name,
+			&i.TrackAmount,
+			&i.Popularity,
+			&i.CoverUrl,
+			&i.CoverID,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const albumGetBySpotify = `-- name: AlbumGetBySpotify :one
-SELECT id, spotify_id, name, track_amount, popularity, cover_url, cover_id
+SELECT id, spotify_id, name, track_amount, popularity, cover_url, cover_id, updated_at
 FROM albums
 WHERE spotify_id = $1
 `
@@ -57,12 +91,13 @@ func (q *Queries) AlbumGetBySpotify(ctx context.Context, spotifyID string) (Albu
 		&i.Popularity,
 		&i.CoverUrl,
 		&i.CoverID,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const albumGetByUser = `-- name: AlbumGetByUser :many
-SELECT a.id, a.spotify_id, a.name, a.track_amount, a.popularity, a.cover_url, a.cover_id
+SELECT a.id, a.spotify_id, a.name, a.track_amount, a.popularity, a.cover_url, a.cover_id, a.updated_at
 FROM albums a
 LEFT JOIN album_users au on au.album_id = a.id
 WHERE au.user_id = $1
@@ -85,6 +120,7 @@ func (q *Queries) AlbumGetByUser(ctx context.Context, userID int32) ([]Album, er
 			&i.Popularity,
 			&i.CoverUrl,
 			&i.CoverID,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -98,15 +134,21 @@ func (q *Queries) AlbumGetByUser(ctx context.Context, userID int32) ([]Album, er
 
 const albumUpdate = `-- name: AlbumUpdate :exec
 UPDATE albums
-SET name = $2, track_amount = $3, popularity = $4, cover_id = $5, cover_url = $6
+SET 
+  name = coalesce($2, name),
+  track_amount = coalesce($3, track_amount),
+  popularity = coalesce($4, popularity),
+  cover_id = coalesce($5, cover_id),
+  cover_url = coalesce($6, cover_url),
+  updated_at = NOW()
 WHERE id = $1
 `
 
 type AlbumUpdateParams struct {
 	ID          int32
-	Name        string
-	TrackAmount int32
-	Popularity  int32
+	Name        pgtype.Text
+	TrackAmount pgtype.Int4
+	Popularity  pgtype.Int4
 	CoverID     pgtype.Text
 	CoverUrl    pgtype.Text
 }

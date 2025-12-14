@@ -21,6 +21,18 @@ func (r *Repository) NewTrack() *Track {
 	}
 }
 
+func (t *Track) GetAll(ctx context.Context) ([]*model.Track, error) {
+	tracks, err := t.repo.queries(ctx).TrackGetAll(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get all track %w", err)
+	}
+
+	return utils.SliceMap(tracks, model.TrackModel), nil
+}
+
 func (t *Track) GetBySpotify(ctx context.Context, spotifyID string) (*model.Track, error) {
 	track, err := t.repo.queries(ctx).TrackGetBySpotify(ctx, spotifyID)
 	if err != nil {
@@ -48,8 +60,8 @@ func (t *Track) GetByPlaylist(ctx context.Context, playlistID int) ([]*model.Tra
 func (t *Track) Create(ctx context.Context, track *model.Track) error {
 	id, err := t.repo.queries(ctx).TrackCreate(ctx, sqlc.TrackCreateParams{
 		SpotifyID:  track.SpotifyID,
-		Name:       track.Name,
-		Popularity: int32(track.Popularity),
+		Name:       toString(track.Name),
+		Popularity: toInt(track.Popularity),
 	})
 	if err != nil {
 		return fmt.Errorf("create track %+v | %w", *track, err)
@@ -60,13 +72,38 @@ func (t *Track) Create(ctx context.Context, track *model.Track) error {
 	return nil
 }
 
-func (t *Track) UpdateBySpotify(ctx context.Context, track model.Track) error {
-	if err := t.repo.queries(ctx).TrackUpdateBySpotify(ctx, sqlc.TrackUpdateBySpotifyParams{
-		SpotifyID:  track.SpotifyID,
-		Name:       track.Name,
-		Popularity: int32(track.Popularity),
+func (t *Track) CreateArtist(ctx context.Context, artist *model.TrackArtist) error {
+	id, err := t.repo.queries(ctx).TrackArtistCreate(ctx, sqlc.TrackArtistCreateParams{
+		TrackID:  int32(artist.TrackID),
+		ArtistID: int32(artist.ArtistID),
+	})
+	if err != nil {
+		return fmt.Errorf("create track artist %+v | %w", *artist, err)
+	}
+
+	artist.ID = int(id)
+
+	return nil
+}
+
+func (t *Track) Update(ctx context.Context, track model.Track) error {
+	if err := t.repo.queries(ctx).TrackUpdate(ctx, sqlc.TrackUpdateParams{
+		ID:         int32(track.ID),
+		Name:       toString(track.Name),
+		Popularity: toInt(track.Popularity),
 	}); err != nil {
 		return fmt.Errorf("update track %+v | %w", track, err)
+	}
+
+	return nil
+}
+
+func (t *Track) DeleteArtistByArtistTrack(ctx context.Context, artist model.TrackArtist) error {
+	if err := t.repo.queries(ctx).TrackArtistDeleteByArtistTrack(ctx, sqlc.TrackArtistDeleteByArtistTrackParams{
+		ArtistID: int32(artist.ArtistID),
+		TrackID:  int32(artist.TrackID),
+	}); err != nil {
+		return fmt.Errorf("delete track artist %+v | %w", artist, err)
 	}
 
 	return nil

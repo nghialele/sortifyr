@@ -51,11 +51,3 @@ type DirectoryPlaylist struct {
 	DirectoryID int
 	PlaylistID  int
 }
-
-func DirectoryPlaylistModel(d sqlc.DirectoryPlaylist) *DirectoryPlaylist {
-	return &DirectoryPlaylist{
-		ID:          int(d.ID),
-		DirectoryID: int(d.DirectoryID),
-		PlaylistID:  int(d.PlaylistID),
-	}
-}

@@ -1,17 +1,10 @@
 package spotify
 
 import (
-	"bytes"
 	"context"
-	"errors"
-	"fmt"
-	"sync"
 
-	"github.com/google/uuid"
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/internal/spotify/api"
-	"github.com/topvennie/sortifyr/pkg/concurrent"
-	"github.com/topvennie/sortifyr/pkg/storage"
 	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
@@ -22,58 +15,37 @@ func (c *client) albumSync(ctx context.Context, user model.User) error {
 		return err
 	}
 
-	albumsSpotifyAPI, err := c.api.AlbumGetAll(ctx, user)
+	albumsSpotifyAPI, err := c.api.AlbumGetUser(ctx, user)
 	if err != nil {
 		return err
 	}
 	albumsSpotify := utils.SliceMap(albumsSpotifyAPI, func(a api.Album) model.Album { return a.ToModel() })
 
-	// Find albums we need to create
-	for i := range albumsSpotify {
-		if _, ok := utils.SliceFind(albumsDB, func(a *model.Album) bool { return a.Equal(albumsSpotify[i]) }); ok {
-			continue
-		}
-
-		// User doesn't have this album yet
-		album, err := c.album.GetBySpotify(ctx, albumsSpotify[i].SpotifyID)
-		if err != nil {
-			return err
-		}
-		if album == nil {
-			// We don't have the album in our database yet
-			if err := c.album.Create(ctx, &albumsSpotify[i]); err != nil {
-				return err
-			}
-		}
-
-		if err := c.album.CreateUser(ctx, &model.AlbumUser{UserID: user.ID, AlbumID: album.ID}); err != nil {
-			return err
-		}
-
-		albumsDB = append(albumsDB, album)
-	}
-
-	// Find albums we need to delete
-	for i := range albumsDB {
-		if _, ok := utils.SliceFind(albumsSpotify, func(a model.Album) bool { return a.Equal(*albumsDB[i]) }); !ok {
-			// User no longer has this album saved
-			if err := c.album.DeleteUserByUserAlbum(ctx, model.AlbumUser{UserID: user.ID, AlbumID: albumsDB[i].ID}); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+	return syncUserData(syncUserDataStruct[model.Album]{
+		DB:     utils.SliceDereference(albumsDB),
+		API:    albumsSpotify,
+		Equal:  func(a1, a2 model.Album) bool { return a1.Equal(a2) },
+		Get:    func(a model.Album) (*model.Album, error) { return c.album.GetBySpotify(ctx, a.SpotifyID) },
+		Create: func(a *model.Album) error { return c.album.Create(ctx, a) },
+		CreateUserLink: func(a model.Album) error {
+			return c.album.CreateUser(ctx, &model.AlbumUser{AlbumID: a.ID, UserID: user.ID})
+		},
+		DeleteUserLink: func(a model.Album) error {
+			return c.album.DeleteUserByUserAlbum(ctx, model.AlbumUser{AlbumID: a.ID, UserID: user.ID})
+		},
+	})
 }
 
-// albumUpdate updates local album instances to match the spotify data
+// albumUpdate updates local album instances to match the spotify data.
+// It updates all albums, regardless of the user given.
+// However the given user's access token is used.
 func (c *client) albumUpdate(ctx context.Context, user model.User) error {
-	albumsDB, err := c.album.GetByUser(ctx, user.ID)
+	albumsDB, err := c.album.GetAll(ctx)
 	if err != nil {
 		return err
 	}
 
-	albumsSpotifyAPI, err := c.api.AlbumGetAll(ctx, user)
+	albumsSpotifyAPI, err := c.api.AlbumGetAll(ctx, user, utils.SliceMap(albumsDB, func(a *model.Album) string { return a.SpotifyID }))
 	if err != nil {
 		return err
 	}
@@ -83,17 +55,40 @@ func (c *client) albumUpdate(ctx context.Context, user model.User) error {
 		albumDB, ok := utils.SliceFind(albumsDB, func(a *model.Album) bool { return a.Equal(albumsSpotify[i]) })
 		if !ok {
 			// Album not found
-			if err := c.album.Create(ctx, &albumsSpotify[i]); err != nil {
-				return err
-			}
-
 			continue
 		}
 
+		albumsSpotify[i].ID = (*albumDB).ID
+
+		// Bring the album data up to date
 		if !(*albumDB).EqualEntry(albumsSpotify[i]) {
 			if err := c.album.Update(ctx, albumsSpotify[i]); err != nil {
 				return err
 			}
+		}
+
+		// Bring the album artists up to date
+		artistsDB, err := c.artist.GetByAlbum(ctx, (*albumDB).ID)
+		if err != nil {
+			return err
+		}
+
+		artistsSpotify := utils.SliceMap(albumsSpotifyAPI[i].Artists, func(a api.Artist) model.Artist { return a.ToModel() })
+
+		if err := syncUserData(syncUserDataStruct[model.Artist]{
+			DB:     utils.SliceDereference(artistsDB),
+			API:    artistsSpotify,
+			Equal:  func(a1, a2 model.Artist) bool { return a1.Equal(a2) },
+			Get:    func(a model.Artist) (*model.Artist, error) { return c.artist.GetBySpotify(ctx, a.SpotifyID) },
+			Create: func(a *model.Artist) error { return c.artist.Create(ctx, a) },
+			CreateUserLink: func(a model.Artist) error {
+				return c.album.CreateArtist(ctx, &model.AlbumArtist{AlbumID: (*albumDB).ID, ArtistID: a.ID})
+			},
+			DeleteUserLink: func(a model.Artist) error {
+				return c.album.DeleteArtistByArtistAlbum(ctx, model.AlbumArtist{AlbumID: (*albumDB).ID, ArtistID: a.ID})
+			},
+		}); err != nil {
+			return err
 		}
 	}
 
@@ -106,84 +101,14 @@ func (c *client) albumCoverSync(ctx context.Context, user model.User) error {
 		return err
 	}
 
-	wg := concurrent.NewLimitedWaitGroup(12)
-
-	var mu sync.Mutex
-	var errs []error
-
-	for _, album := range albums {
-		if album.CoverURL == "" {
-			continue
+	return c.syncCover(ctx, utils.SliceMap(albums, func(a *model.Album) syncCoverStruct {
+		return syncCoverStruct{
+			CoverURL: a.CoverURL,
+			CoverID:  a.CoverID,
+			Update: func(newID string) error {
+				a.CoverID = newID
+				return c.album.Update(ctx, *a)
+			},
 		}
-
-		wg.Go(func() {
-			cover, err := c.api.ImageGet(ctx, album.CoverURL)
-			if err != nil {
-				mu.Lock()
-				errs = append(errs, err)
-				mu.Unlock()
-				return
-			}
-			if len(cover) == 0 {
-				return
-			}
-
-			oldCover := []byte{}
-			if album.CoverID != "" {
-				oldCover, err = storage.S.Get(album.CoverID)
-				if err != nil {
-					mu.Lock()
-					errs = append(errs, fmt.Errorf("get cover for %+v | %w", *album, err))
-					mu.Unlock()
-					return
-				}
-			}
-
-			if bytes.Equal(cover, oldCover) {
-				return
-			}
-
-			album.CoverID = uuid.NewString()
-			if err := storage.S.Set(album.CoverID, cover, 0); err != nil {
-				mu.Lock()
-				errs = append(errs, fmt.Errorf("store new cover %+v | %w", *album, err))
-				mu.Unlock()
-				return
-			}
-
-			if err := c.album.Update(ctx, *album); err != nil {
-				mu.Lock()
-				errs = append(errs, err)
-				mu.Unlock()
-				return
-			}
-		})
-	}
-
-	wg.Wait()
-
-	if len(errs) > 0 {
-		return errors.Join(errs...)
-	}
-
-	return nil
-}
-
-func (c *client) albumCheck(ctx context.Context, album *model.Album) error {
-	albumDB, err := c.album.GetBySpotify(ctx, album.SpotifyID)
-	if err != nil {
-		return err
-	}
-
-	if albumDB == nil {
-		return c.album.Create(ctx, album)
-	}
-
-	album.ID = albumDB.ID
-
-	if !albumDB.EqualEntry(*album) {
-		return c.album.Update(ctx, *album)
-	}
-
-	return nil
+	}))
 }
