@@ -63,7 +63,24 @@ func (c *client) playlistUpdate(ctx context.Context, user model.User) error {
 	if err != nil {
 		return err
 	}
-	playlistsSpotify := utils.SliceMap(playlistsSpotifyAPI, func(p api.Playlist) model.Playlist { return p.ToModel() })
+	playlistsSpotify := make([]model.Playlist, 0, len(playlistsSpotifyAPI))
+	for i := range playlistsSpotifyAPI {
+		ownerDB, err := c.user.GetByUID(ctx, playlistsSpotifyAPI[i].Owner.UID)
+		if err != nil {
+			return err
+		}
+		if ownerDB == nil {
+			ownerDB = &model.User{UID: playlistsSpotifyAPI[i].Owner.UID, DisplayName: playlistsSpotifyAPI[i].Owner.DisplayName}
+			if err := c.user.Create(ctx, ownerDB); err != nil {
+				return err
+			}
+		}
+
+		playlistSpotify := playlistsSpotifyAPI[i].ToModel()
+		playlistSpotify.OwnerID = ownerDB.ID
+
+		playlistsSpotify = append(playlistsSpotify, playlistSpotify)
+	}
 
 	for i := range playlistsSpotify {
 		playlistDB, ok := utils.SliceFind(playlistsDB, func(p *model.Playlist) bool { return p.Equal(playlistsSpotify[i]) })
