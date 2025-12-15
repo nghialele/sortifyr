@@ -13,6 +13,35 @@ FROM tracks t
 LEFT JOIN playlist_tracks pt ON pt.track_id = t.id
 WHERE pt.playlist_id = $1 AND pt.deleted_at IS NULL;
 
+-- name: TrackGetCreatedFilteredPopulated :many
+SELECT sqlc.embed(t), sqlc.embed(pt), sqlc.embed(p), sqlc.embed(u)
+FROM tracks t
+LEFT JOIN playlist_tracks pt ON pt.track_id = t.id
+LEFT JOIN playlist_users pu ON pu.playlist_id = pt.playlist_id
+LEFT JOIN playlists p ON p.id = pu.playlist_id
+LEFT JOIN users u ON p.owner_id = u.id
+WHERE 
+  pu.user_id = $3::int AND 
+  pt.deleted_at IS NULL AND
+  (p.id = $4::int OR NOT @filter_playlist_id)
+ORDER BY pt.created_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: TrackGetDeletedFilteredPopulated :many
+SELECT sqlc.embed(t), sqlc.embed(pt), sqlc.embed(p), sqlc.embed(u)
+FROM tracks t
+LEFT JOIN playlist_tracks pt ON pt.track_id = t.id
+LEFT JOIN playlist_users pu ON pu.playlist_id = pt.playlist_id
+LEFT JOIN playlists p ON p.id = pu.playlist_id
+LEFT JOIN users u ON p.owner_id = u.id
+WHERE
+  pu.user_id = $3::int AND 
+  pt.deleted_at IS NOT NULL AND
+  (p.id = $4::int OR NOT @filter_playlist_id)
+ORDER BY pt.deleted_at DESC
+LIMIT $1 OFFSET $2;
+
+
 -- name: TrackCreate :one
 INSERT INTO tracks (spotify_id, name, popularity)
 VALUES ($1, $2, $3)

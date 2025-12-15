@@ -6,7 +6,7 @@ import { ActionIcon, AppShell, Burger, Button, Divider, Group, ScrollArea, Stack
 import { useDisclosure } from "@mantine/hooks";
 import { LinkProps } from "@tanstack/react-router";
 import { ComponentProps, ReactNode, useState } from "react";
-import { LuClock, LuFolderTree, LuHistory, LuLink2, LuListMusic, LuMusic, LuTriangle } from "react-icons/lu";
+import { LuClock, LuFolderTree, LuLink2, LuListMusic, LuMusic, LuMusic3, LuTriangle } from "react-icons/lu";
 
 type Props = ComponentProps<"div">
 
@@ -18,6 +18,11 @@ type Route = {
 
 const routes: Route[] = [
   {
+    title: "Tracks",
+    icon: <LuMusic3 className="size-5" />,
+    link: { to: "/history" },
+  },
+  {
     title: "Playlists",
     icon: <LuListMusic className="size-5" />,
     link: { to: "/playlist" },
@@ -26,11 +31,6 @@ const routes: Route[] = [
     title: "Directories",
     icon: <LuFolderTree className="size-5" />,
     link: { to: "/directory" },
-  },
-  {
-    title: "History",
-    icon: <LuHistory className="size-5" />,
-    link: { to: "/history" },
   },
   {
     title: "Links",
@@ -118,7 +118,7 @@ export const NavLayout = ({ className, children, ...props }: Props) => {
           </Stack>
         </AppShell.Section>
       </AppShell.Navbar>
-      <AppShell.Main py={{ lg: 0 }} bg="background.0" className={cn("h-screen", className)} {...props}>
+      <AppShell.Main py={{ lg: 0 }} bg="background.0" className={cn("h-screen overflow-auto border border-red-500", className)} {...props}>
         {children}
       </AppShell.Main>
     </AppShell>

@@ -37,7 +37,8 @@ func (s *Show) EqualEntry(s2 Show) bool {
 }
 
 type ShowUser struct {
-	ID     int
-	UserID int
-	ShowID int
+	ID        int
+	UserID    int
+	ShowID    int
+	DeletedAt time.Time
 }

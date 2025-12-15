@@ -48,13 +48,25 @@ func (p *Playlist) GetBySpotify(ctx context.Context, spotifyID string) (*model.P
 	return model.PlaylistModel(playlist), nil
 }
 
+func (p *Playlist) GetByUser(ctx context.Context, userID int) ([]*model.Playlist, error) {
+	playlists, err := p.repo.queries(ctx).PlaylistGetByUser(ctx, int32(userID))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get playlists by user %d | %w", userID, err)
+	}
+
+	return utils.SliceMap(playlists, model.PlaylistModel), nil
+}
+
 func (p *Playlist) GetByUserPopulated(ctx context.Context, userID int) ([]*model.Playlist, error) {
 	playlists, err := p.repo.queries(ctx).PlaylistGetByUserWithOwner(ctx, int32(userID))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("get playlists by user %d | %w", userID, err)
+		return nil, fmt.Errorf("get playlists with owner by user %d | %w", userID, err)
 	}
 
 	return utils.SliceMap(playlists, func(r sqlc.PlaylistGetByUserWithOwnerRow) *model.Playlist {

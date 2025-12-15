@@ -1,4 +1,5 @@
 import { API } from "./api";
+import { convertPlaylist, Playlist } from "./playlist";
 
 export interface Track {
   id: number;
@@ -31,3 +32,40 @@ export const convertTrackHistories = (h: API.TrackHistory[]): TrackHistory[] => 
   return h.map(convertTrackHistory)
 }
 
+export interface TrackAdded extends Track {
+  playlist: Playlist;
+  createdAt: Date;
+}
+
+export const convertTrackAdded = (t: API.TrackAdded): TrackAdded => {
+  return {
+    ...convertTrack(t),
+    playlist: convertPlaylist(t.playlist),
+    createdAt: new Date(t.created_at),
+  }
+}
+
+export const convertTracksAdded = (t: API.TrackAdded[]): TrackAdded[] => {
+  return t.map(convertTrackAdded)
+}
+
+export interface TrackDeleted extends Track {
+  playlist: Playlist;
+  deletedAt: Date;
+}
+
+export const convertTrackDeleted = (t: API.TrackDeleted): TrackDeleted => {
+  return {
+    ...convertTrack(t),
+    playlist: convertPlaylist(t.playlist),
+    deletedAt: new Date(t.deleted_at),
+  }
+}
+
+export const convertTracksDeleted = (t: API.TrackDeleted[]): TrackDeleted[] => {
+  return t.map(convertTrackDeleted)
+}
+
+export interface TrackFilter {
+  playlistId?: string;
+}

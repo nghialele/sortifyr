@@ -57,6 +57,60 @@ func (t *Track) GetByPlaylist(ctx context.Context, playlistID int) ([]*model.Tra
 	return utils.SliceMap(tracks, model.TrackModel), nil
 }
 
+func (t *Track) GetCreatedFiltered(ctx context.Context, filter model.TrackFilter) ([]*model.Track, error) {
+	params := sqlc.TrackGetCreatedFilteredPopulatedParams{
+		Column3:          int32(filter.UserID),
+		Column4:          int32(filter.PlaylistID),
+		FilterPlaylistID: filter.PlaylistID != 0,
+		Limit:            int32(filter.Limit),
+		Offset:           int32(filter.Offset),
+	}
+
+	tracks, err := t.repo.queries(ctx).TrackGetCreatedFilteredPopulated(ctx, params)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get filtered created tracks %+v | %w", filter, err)
+	}
+
+	return utils.SliceMap(tracks, func(t sqlc.TrackGetCreatedFilteredPopulatedRow) *model.Track {
+		track := model.TrackModel(t.Track)
+		track.Playlist = *model.PlaylistModel(t.Playlist)
+		track.Playlist.Owner = *model.UserModel(t.User)
+		track.CreatedAt = t.PlaylistTrack.CreatedAt.Time
+
+		return track
+	}), nil
+}
+
+func (t *Track) GetDeletedFiltered(ctx context.Context, filter model.TrackFilter) ([]*model.Track, error) {
+	params := sqlc.TrackGetDeletedFilteredPopulatedParams{
+		Column3:          int32(filter.UserID),
+		Column4:          int32(filter.PlaylistID),
+		FilterPlaylistID: filter.PlaylistID != 0,
+		Limit:            int32(filter.Limit),
+		Offset:           int32(filter.Offset),
+	}
+
+	tracks, err := t.repo.queries(ctx).TrackGetDeletedFilteredPopulated(ctx, params)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get filtered deleted tracks %+v | %w", filter, err)
+	}
+
+	return utils.SliceMap(tracks, func(t sqlc.TrackGetDeletedFilteredPopulatedRow) *model.Track {
+		track := model.TrackModel(t.Track)
+		track.Playlist = *model.PlaylistModel(t.Playlist)
+		track.Playlist.Owner = *model.UserModel(t.User)
+		track.DeletedAt = t.PlaylistTrack.DeletedAt.Time
+
+		return track
+	}), nil
+}
+
 func (t *Track) Create(ctx context.Context, track *model.Track) error {
 	id, err := t.repo.queries(ctx).TrackCreate(ctx, sqlc.TrackCreateParams{
 		SpotifyID:  track.SpotifyID,

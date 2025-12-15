@@ -14,7 +14,10 @@ type Track struct {
 	UpdatedAt  time.Time
 
 	// Non db fields
-	Artists []Artist
+	Artists   []Artist
+	Playlist  Playlist
+	CreatedAt time.Time
+	DeletedAt time.Time
 }
 
 func TrackModel(t sqlc.Track) *Track {
@@ -39,4 +42,11 @@ type TrackArtist struct {
 	ID       int
 	TrackID  int
 	ArtistID int
+}
+
+type TrackFilter struct {
+	UserID     int
+	PlaylistID int
+	Limit      int
+	Offset     int
 }

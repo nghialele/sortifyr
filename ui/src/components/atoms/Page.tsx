@@ -27,7 +27,7 @@ export const PageTitle = ({ title, description, ...props }: PageTitleProps) => {
 type SectionProps = StackProps
 
 export const Section = ({ className, ...props }: SectionProps) => {
-  return <Stack p="md" gap="xs" className={cn("flex-1 bg-white rounded-xl md:overflow-hidden", className)} {...props} />
+  return <Stack p="md" gap="xs" className={cn("flex-1 bg-white rounded-xl md:overflow-auto", className)} {...props} />
 }
 
 type SectionTitleProps = {

@@ -113,6 +113,172 @@ func (q *Queries) TrackGetBySpotify(ctx context.Context, spotifyID string) (Trac
 	return i, err
 }
 
+const trackGetCreatedFilteredPopulated = `-- name: TrackGetCreatedFilteredPopulated :many
+SELECT t.id, t.spotify_id, t.name, t.popularity, t.updated_at, pt.id, pt.playlist_id, pt.track_id, pt.deleted_at, pt.created_at, p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, u.id, u.uid, u.name, u.display_name, u.email
+FROM tracks t
+LEFT JOIN playlist_tracks pt ON pt.track_id = t.id
+LEFT JOIN playlist_users pu ON pu.playlist_id = pt.playlist_id
+LEFT JOIN playlists p ON p.id = pu.playlist_id
+LEFT JOIN users u ON p.owner_id = u.id
+WHERE 
+  pu.user_id = $3::int AND 
+  pt.deleted_at IS NULL AND
+  (p.id = $4::int OR NOT $5)
+ORDER BY pt.created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type TrackGetCreatedFilteredPopulatedParams struct {
+	Limit            int32
+	Offset           int32
+	Column3          int32
+	Column4          int32
+	FilterPlaylistID interface{}
+}
+
+type TrackGetCreatedFilteredPopulatedRow struct {
+	Track         Track
+	PlaylistTrack PlaylistTrack
+	Playlist      Playlist
+	User          User
+}
+
+func (q *Queries) TrackGetCreatedFilteredPopulated(ctx context.Context, arg TrackGetCreatedFilteredPopulatedParams) ([]TrackGetCreatedFilteredPopulatedRow, error) {
+	rows, err := q.db.Query(ctx, trackGetCreatedFilteredPopulated,
+		arg.Limit,
+		arg.Offset,
+		arg.Column3,
+		arg.Column4,
+		arg.FilterPlaylistID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TrackGetCreatedFilteredPopulatedRow
+	for rows.Next() {
+		var i TrackGetCreatedFilteredPopulatedRow
+		if err := rows.Scan(
+			&i.Track.ID,
+			&i.Track.SpotifyID,
+			&i.Track.Name,
+			&i.Track.Popularity,
+			&i.Track.UpdatedAt,
+			&i.PlaylistTrack.ID,
+			&i.PlaylistTrack.PlaylistID,
+			&i.PlaylistTrack.TrackID,
+			&i.PlaylistTrack.DeletedAt,
+			&i.PlaylistTrack.CreatedAt,
+			&i.Playlist.ID,
+			&i.Playlist.SpotifyID,
+			&i.Playlist.Name,
+			&i.Playlist.Description,
+			&i.Playlist.Public,
+			&i.Playlist.TrackAmount,
+			&i.Playlist.Collaborative,
+			&i.Playlist.CoverID,
+			&i.Playlist.CoverUrl,
+			&i.Playlist.OwnerID,
+			&i.Playlist.UpdatedAt,
+			&i.User.ID,
+			&i.User.Uid,
+			&i.User.Name,
+			&i.User.DisplayName,
+			&i.User.Email,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const trackGetDeletedFilteredPopulated = `-- name: TrackGetDeletedFilteredPopulated :many
+SELECT t.id, t.spotify_id, t.name, t.popularity, t.updated_at, pt.id, pt.playlist_id, pt.track_id, pt.deleted_at, pt.created_at, p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, u.id, u.uid, u.name, u.display_name, u.email
+FROM tracks t
+LEFT JOIN playlist_tracks pt ON pt.track_id = t.id
+LEFT JOIN playlist_users pu ON pu.playlist_id = pt.playlist_id
+LEFT JOIN playlists p ON p.id = pu.playlist_id
+LEFT JOIN users u ON p.owner_id = u.id
+WHERE
+  pu.user_id = $3::int AND 
+  pt.deleted_at IS NOT NULL AND
+  (p.id = $4::int OR NOT $5)
+ORDER BY pt.deleted_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type TrackGetDeletedFilteredPopulatedParams struct {
+	Limit            int32
+	Offset           int32
+	Column3          int32
+	Column4          int32
+	FilterPlaylistID interface{}
+}
+
+type TrackGetDeletedFilteredPopulatedRow struct {
+	Track         Track
+	PlaylistTrack PlaylistTrack
+	Playlist      Playlist
+	User          User
+}
+
+func (q *Queries) TrackGetDeletedFilteredPopulated(ctx context.Context, arg TrackGetDeletedFilteredPopulatedParams) ([]TrackGetDeletedFilteredPopulatedRow, error) {
+	rows, err := q.db.Query(ctx, trackGetDeletedFilteredPopulated,
+		arg.Limit,
+		arg.Offset,
+		arg.Column3,
+		arg.Column4,
+		arg.FilterPlaylistID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []TrackGetDeletedFilteredPopulatedRow
+	for rows.Next() {
+		var i TrackGetDeletedFilteredPopulatedRow
+		if err := rows.Scan(
+			&i.Track.ID,
+			&i.Track.SpotifyID,
+			&i.Track.Name,
+			&i.Track.Popularity,
+			&i.Track.UpdatedAt,
+			&i.PlaylistTrack.ID,
+			&i.PlaylistTrack.PlaylistID,
+			&i.PlaylistTrack.TrackID,
+			&i.PlaylistTrack.DeletedAt,
+			&i.PlaylistTrack.CreatedAt,
+			&i.Playlist.ID,
+			&i.Playlist.SpotifyID,
+			&i.Playlist.Name,
+			&i.Playlist.Description,
+			&i.Playlist.Public,
+			&i.Playlist.TrackAmount,
+			&i.Playlist.Collaborative,
+			&i.Playlist.CoverID,
+			&i.Playlist.CoverUrl,
+			&i.Playlist.OwnerID,
+			&i.Playlist.UpdatedAt,
+			&i.User.ID,
+			&i.User.Uid,
+			&i.User.Name,
+			&i.User.DisplayName,
+			&i.User.Email,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const trackUpdate = `-- name: TrackUpdate :exec
 UPDATE tracks
 SET

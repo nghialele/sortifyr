@@ -42,9 +42,10 @@ func (a *Album) EqualEntry(a2 Album) bool {
 }
 
 type AlbumUser struct {
-	ID      int
-	UserID  int
-	AlbumID int
+	ID        int
+	UserID    int
+	AlbumID   int
+	DeletedAt time.Time
 }
 
 type AlbumArtist struct {

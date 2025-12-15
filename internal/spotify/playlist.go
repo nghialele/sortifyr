@@ -9,7 +9,7 @@ import (
 )
 
 func (c *client) playlistSync(ctx context.Context, user model.User) error {
-	playlistsDB, err := c.playlist.GetByUserPopulated(ctx, user.ID)
+	playlistsDB, err := c.playlist.GetByUser(ctx, user.ID)
 	if err != nil {
 		return err
 	}
@@ -54,7 +54,7 @@ func (c *client) playlistSync(ctx context.Context, user model.User) error {
 
 // playlistUpdate updates local playlist instances to match the spotify data
 func (c *client) playlistUpdate(ctx context.Context, user model.User) error {
-	playlistsDB, err := c.playlist.GetByUserPopulated(ctx, user.ID)
+	playlistsDB, err := c.playlist.GetByUser(ctx, user.ID)
 	if err != nil {
 		return err
 	}

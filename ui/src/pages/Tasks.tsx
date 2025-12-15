@@ -41,7 +41,7 @@ export const Tasks = () => {
         />
       </Section>
 
-      <Section>
+      <Section className="min-h-full">
         <SectionTitle
           title="Run history"
           description="Recent runs across all background tasks."

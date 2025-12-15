@@ -96,12 +96,52 @@ func (q *Queries) PlaylistGetBySpotify(ctx context.Context, spotifyID string) (P
 	return i, err
 }
 
+const playlistGetByUser = `-- name: PlaylistGetByUser :many
+SELECT p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at
+FROM playlists p
+LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
+WHERE pu.user_id = $1 AND pu.deleted_at IS NULL
+ORDER BY p.name
+`
+
+func (q *Queries) PlaylistGetByUser(ctx context.Context, userID int32) ([]Playlist, error) {
+	rows, err := q.db.Query(ctx, playlistGetByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Playlist
+	for rows.Next() {
+		var i Playlist
+		if err := rows.Scan(
+			&i.ID,
+			&i.SpotifyID,
+			&i.Name,
+			&i.Description,
+			&i.Public,
+			&i.TrackAmount,
+			&i.Collaborative,
+			&i.CoverID,
+			&i.CoverUrl,
+			&i.OwnerID,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const playlistGetByUserWithOwner = `-- name: PlaylistGetByUserWithOwner :many
 SELECT p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, u.id, u.uid, u.name, u.display_name, u.email
 FROM playlists p
 LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
 LEFT JOIN users u ON u.id = p.owner_id
-WHERE pu.user_id = $1 AND pu.deleted_at IS NULL
+WHERE pu.user_id = $1 AND p.owner_id IS NOT NULL AND pu.deleted_at IS NULL
 ORDER BY p.name
 `
 

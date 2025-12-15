@@ -139,6 +139,7 @@ type PlaylistTrack struct {
 	PlaylistID int32
 	TrackID    int32
 	DeletedAt  pgtype.Timestamptz
+	CreatedAt  pgtype.Timestamptz
 }
 
 type PlaylistUser struct {

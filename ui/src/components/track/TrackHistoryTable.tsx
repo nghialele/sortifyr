@@ -16,7 +16,7 @@ export const TrackHistoryTable = () => {
     <Table
       idAccessor="historyId"
       columns={[
-        { accessor: "name", title: "Track" },
+        { accessor: "name", title: "Track", width: "80%", ellipsis: true },
         { accessor: "playedAt", render: ({ playedAt }) => <p className="text-muted">{formatDate(playedAt)}</p> }
       ]}
       records={history}

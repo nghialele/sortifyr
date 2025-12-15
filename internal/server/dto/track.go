@@ -20,6 +20,52 @@ func TrackDTO(t *model.Track) Track {
 	}
 }
 
+type TrackFilter struct {
+	UserID     int
+	PlaylistID int
+	Limit      int
+	Offset     int
+}
+
+func (t TrackFilter) ToModel() *model.TrackFilter {
+	return &model.TrackFilter{
+		UserID:     t.UserID,
+		PlaylistID: t.PlaylistID,
+		Limit:      t.Limit,
+		Offset:     t.Offset,
+	}
+}
+
+type TrackAdded struct {
+	Track
+
+	Playlist  Playlist  `json:"playlist"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func TrackAddedDTO(t *model.Track) TrackAdded {
+	return TrackAdded{
+		Track:     TrackDTO(t),
+		Playlist:  PlaylistDTO(&t.Playlist, &t.Playlist.Owner),
+		CreatedAt: t.CreatedAt,
+	}
+}
+
+type TrackDeleted struct {
+	Track
+
+	Playlist  Playlist  `json:"playlist"`
+	DeletedAt time.Time `json:"deleted_at"`
+}
+
+func TrackDeletedDTO(t *model.Track) TrackDeleted {
+	return TrackDeleted{
+		Track:     TrackDTO(t),
+		Playlist:  PlaylistDTO(&t.Playlist, &t.Playlist.Owner),
+		DeletedAt: t.DeletedAt,
+	}
+}
+
 type History struct {
 	Track
 

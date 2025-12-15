@@ -58,10 +58,13 @@ type PlaylistTrack struct {
 	ID         int
 	PlaylistID int
 	TrackID    int
+	CreatedAt  time.Time
+	DeletedAt  time.Time
 }
 
 type PlaylistUser struct {
 	ID         int
 	UserID     int
 	PlaylistID int
+	DeletedAt  time.Time
 }

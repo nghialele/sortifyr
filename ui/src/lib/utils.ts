@@ -64,3 +64,10 @@ export function getBuildTime() {
 
   return buildTime ? formatDate(new Date(buildTime)) : "Development"
 }
+
+export const scrollTo = (id: string) => {
+  const element = document.getElementById(id)
+  if (!element) return
+
+  element.scrollIntoView({ behavior: "smooth" })
+}

@@ -8,12 +8,20 @@ SELECT *
 FROM playlists
 WHERE spotify_id = $1;
 
+-- name: PlaylistGetByUser :many
+SELECT p.*
+FROM playlists p
+LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
+WHERE pu.user_id = $1 AND pu.deleted_at IS NULL
+ORDER BY p.name;
+
+
 -- name: PlaylistGetByUserWithOwner :many
 SELECT sqlc.embed(p), sqlc.embed(u)
 FROM playlists p
 LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
 LEFT JOIN users u ON u.id = p.owner_id
-WHERE pu.user_id = $1 AND pu.deleted_at IS NULL
+WHERE pu.user_id = $1 AND p.owner_id IS NOT NULL AND pu.deleted_at IS NULL
 ORDER BY p.name;
 
 -- name: PlaylistCreate :one

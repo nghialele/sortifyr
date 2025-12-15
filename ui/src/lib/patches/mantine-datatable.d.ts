@@ -5,10 +5,10 @@ import { ReactNode } from "react";
 declare module "mantine-datatable" {
   // https://icflorescu.github.io/mantine-datatable/type-definitions/
 
-  interface Column<T> {
+  interface Column<T> extends Record<string, unknown> {
     accessor: keyof T | string;
     title?: string;
-    width?: number;
+    width?: number | string;
     render?: (row: T) => ReactNode;
     sortable?: boolean;
     textAlign?: "left" | "right";

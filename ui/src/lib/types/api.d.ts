@@ -64,4 +64,14 @@ export namespace API {
     history_id: number;
     played_at: string;
   }
+
+  export interface TrackAdded extends Track {
+    playlist: Playlist;
+    created_at: string;
+  }
+
+  export interface TrackDeleted extends Track {
+    playlist: Playlist;
+    deleted_at: string;
+  }
 }
