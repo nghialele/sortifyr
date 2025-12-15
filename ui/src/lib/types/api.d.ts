@@ -54,4 +54,14 @@ export namespace API {
     error?: string;
     duration: number;
   }
+
+  export interface Track extends Base {
+    spotify_id: string;
+    name: string;
+  }
+
+  export interface TrackHistory extends Track {
+    history_id: number;
+    played_at: string;
+  }
 }

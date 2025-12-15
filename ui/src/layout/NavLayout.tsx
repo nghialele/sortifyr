@@ -6,7 +6,7 @@ import { ActionIcon, AppShell, Burger, Button, Divider, Group, ScrollArea, Stack
 import { useDisclosure } from "@mantine/hooks";
 import { LinkProps } from "@tanstack/react-router";
 import { ComponentProps, ReactNode, useState } from "react";
-import { LuClock, LuFolderTree, LuLink2, LuListMusic, LuMusic, LuTriangle } from "react-icons/lu";
+import { LuClock, LuFolderTree, LuHistory, LuLink2, LuListMusic, LuMusic, LuTriangle } from "react-icons/lu";
 
 type Props = ComponentProps<"div">
 
@@ -26,6 +26,11 @@ const routes: Route[] = [
     title: "Directories",
     icon: <LuFolderTree className="size-5" />,
     link: { to: "/directory" },
+  },
+  {
+    title: "History",
+    icon: <LuHistory className="size-5" />,
+    link: { to: "/history" },
   },
   {
     title: "Links",

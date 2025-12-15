@@ -26,6 +26,7 @@ declare module "mantine-datatable" {
 
     fetching?: boolean;
     customLoader?: ReactNode
+    onScrollToBottom?: () => void
 
     styles: {
       root: (theme: MantineTheme) => Record<string, string>,

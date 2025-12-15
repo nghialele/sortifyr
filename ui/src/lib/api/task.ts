@@ -6,7 +6,7 @@ import { apiGet, apiPost } from "./query";
 
 const ENDPOINT = "task";
 const PAGE_LIMIT = 100;
-const REFETCH_SEC_10 = 10 * 1000;
+const REFETCH_SEC_5 = 5 * 1000;
 
 export function useTaskGetAll() {
   const queryClient = useQueryClient();
@@ -14,7 +14,7 @@ export function useTaskGetAll() {
   return useQuery({
     queryKey: ["task"],
     queryFn: async () => (await apiGet(ENDPOINT, convertTasks)).data,
-    refetchInterval: REFETCH_SEC_10,
+    refetchInterval: REFETCH_SEC_5,
     structuralSharing(oldData, newData) {
       if (JSON.stringify(oldData) !== JSON.stringify(newData)) {
         void queryClient.invalidateQueries({ queryKey: ["task_history"] });
