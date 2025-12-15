@@ -15,6 +15,9 @@ type History struct {
 	ArtistID   int
 	PlaylistID int
 	ShowID     int
+
+	// Non db fields
+	Track Track
 }
 
 func HistoryModel(h sqlc.History) *History {
@@ -45,4 +48,10 @@ func HistoryModel(h sqlc.History) *History {
 		PlaylistID: playlistID,
 		ShowID:     showID,
 	}
+}
+
+type HistoryFilter struct {
+	UserID int
+	Limit  int
+	Offset int
 }

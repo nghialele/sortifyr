@@ -65,3 +65,57 @@ func (q *Queries) HistoryGetLatestByUser(ctx context.Context, userID int32) (His
 	)
 	return i, err
 }
+
+const historyGetPopulatedFiltered = `-- name: HistoryGetPopulatedFiltered :many
+SELECT h.id, h.user_id, h.track_id, h.played_at, h.album_id, h.artist_id, h.playlist_id, h.show_id, t.id, t.spotify_id, t.name, t.popularity, t.updated_at
+FROM history h
+LEFT JOIN tracks t ON t.id = h.track_id
+WHERE h.user_id = $1::int
+ORDER BY h.played_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type HistoryGetPopulatedFilteredParams struct {
+	Column1 int32
+	Limit   int32
+	Offset  int32
+}
+
+type HistoryGetPopulatedFilteredRow struct {
+	History History
+	Track   Track
+}
+
+func (q *Queries) HistoryGetPopulatedFiltered(ctx context.Context, arg HistoryGetPopulatedFilteredParams) ([]HistoryGetPopulatedFilteredRow, error) {
+	rows, err := q.db.Query(ctx, historyGetPopulatedFiltered, arg.Column1, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []HistoryGetPopulatedFilteredRow
+	for rows.Next() {
+		var i HistoryGetPopulatedFilteredRow
+		if err := rows.Scan(
+			&i.History.ID,
+			&i.History.UserID,
+			&i.History.TrackID,
+			&i.History.PlayedAt,
+			&i.History.AlbumID,
+			&i.History.ArtistID,
+			&i.History.PlaylistID,
+			&i.History.ShowID,
+			&i.Track.ID,
+			&i.Track.SpotifyID,
+			&i.Track.Name,
+			&i.Track.Popularity,
+			&i.Track.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

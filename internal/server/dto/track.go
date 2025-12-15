@@ -1,0 +1,50 @@
+package dto
+
+import (
+	"time"
+
+	"github.com/topvennie/sortifyr/internal/database/model"
+)
+
+type Track struct {
+	ID        int    `json:"id"`
+	SpotifyID string `json:"spotify_id"`
+	Name      string `json:"name"`
+}
+
+func TrackDTO(t *model.Track) Track {
+	return Track{
+		ID:        t.ID,
+		SpotifyID: t.SpotifyID,
+		Name:      t.Name,
+	}
+}
+
+type History struct {
+	Track
+
+	HistoryID int       `json:"history_id"`
+	PlayedAt  time.Time `json:"played_at"`
+}
+
+func HistoryDTO(t *model.Track, h *model.History) History {
+	return History{
+		Track:     TrackDTO(t),
+		HistoryID: h.ID,
+		PlayedAt:  h.PlayedAt,
+	}
+}
+
+type HistoryFilter struct {
+	UserID int
+	Limit  int
+	Offset int
+}
+
+func (h HistoryFilter) ToModel() *model.HistoryFilter {
+	return &model.HistoryFilter{
+		UserID: h.UserID,
+		Limit:  h.Limit,
+		Offset: h.Offset,
+	}
+}

@@ -5,6 +5,14 @@ WHERE user_id = $1
 ORDER BY played_at DESC
 LIMIT 1;
 
+-- name: HistoryGetPopulatedFiltered :many
+SELECT sqlc.embed(h), sqlc.embed(t)
+FROM history h
+LEFT JOIN tracks t ON t.id = h.track_id
+WHERE h.user_id = $1::int
+ORDER BY h.played_at DESC
+LIMIT $2 OFFSET $3;
+ 
 -- name: HistoryCreate :one
 INSERT INTO history (user_id, track_id, played_at, album_id, artist_id, playlist_id, show_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7)

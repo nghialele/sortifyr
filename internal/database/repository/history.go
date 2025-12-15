@@ -8,6 +8,7 @@ import (
 
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/pkg/sqlc"
+	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
 type History struct {
@@ -30,6 +31,27 @@ func (h *History) GetLatest(ctx context.Context, userID int) (*model.History, er
 	}
 
 	return model.HistoryModel(history), nil
+}
+
+func (h *History) GetPopulatedFiltered(ctx context.Context, filter model.HistoryFilter) ([]*model.History, error) {
+	history, err := h.repo.queries(ctx).HistoryGetPopulatedFiltered(ctx, sqlc.HistoryGetPopulatedFilteredParams{
+		Column1: int32(filter.UserID),
+		Limit:   int32(filter.Limit),
+		Offset:  int32(filter.Offset),
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get filtered populated history %+v | %w", filter, err)
+	}
+
+	return utils.SliceMap(history, func(h sqlc.HistoryGetPopulatedFilteredRow) *model.History {
+		history := model.HistoryModel(h.History)
+		history.Track = *model.TrackModel(h.Track)
+
+		return history
+	}), nil
 }
 
 func (h *History) Create(ctx context.Context, history *model.History) error {
