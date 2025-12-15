@@ -44,26 +44,28 @@ const routes: Route[] = [
   }
 ];
 
-const NavLink = ({ route }: { route: Route }) => {
+const NavLink = ({ route, close }: { route: Route, close?: () => void }) => {
   return (
-    <LinkButton
-      to={route.link.to}
-      activeProps={{ variant: "filled", bg: "primary.1" }}
-      variant="subtle"
-      size="md"
-      radius="md"
-      c="black"
-      fullWidth
-      justify="start"
-      leftSection={route.icon}
-    >
-      {route.title}
-    </LinkButton>
+    <div onClick={close}>
+      <LinkButton
+        to={route.link.to}
+        activeProps={{ variant: "filled", bg: "primary.1" }}
+        variant="subtle"
+        size="md"
+        radius="md"
+        c="black"
+        fullWidth
+        justify="start"
+        leftSection={route.icon}
+      >
+        {route.title}
+      </LinkButton>
+    </div>
   );
 };
 
 export const NavLayout = ({ className, children, ...props }: Props) => {
-  const [opened, { toggle }] = useDisclosure();
+  const [opened, { close, toggle }] = useDisclosure();
   const { user, logout } = useAuth()
 
   const [userExpanded, setUserExpanded] = useState(false)
@@ -91,7 +93,7 @@ export const NavLayout = ({ className, children, ...props }: Props) => {
         </AppShell.Section>
         <AppShell.Section grow my="md" component={ScrollArea} px="md">
           <Stack p="sm" gap="xs" className="rounded-xl bg-white">
-            {routes.map(r => <NavLink key={r.title} route={r} />)}
+            {routes.map(r => <NavLink key={r.title} route={r} close={close} />)}
           </Stack>
         </AppShell.Section>
         <AppShell.Section p="md">
