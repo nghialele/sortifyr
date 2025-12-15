@@ -4,5 +4,6 @@ VALUES ($1, $2)
 RETURNING id;
 
 -- name: AlbumUserDeleteByUserAlbum :exec
-DELETE FROM album_users
+UPDATE album_users
+SET deleted_at = NOW()
 WHERE user_id = $1 AND album_id = $2;

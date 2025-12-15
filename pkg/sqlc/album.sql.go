@@ -100,7 +100,7 @@ const albumGetByUser = `-- name: AlbumGetByUser :many
 SELECT a.id, a.spotify_id, a.name, a.track_amount, a.popularity, a.cover_url, a.cover_id, a.updated_at
 FROM albums a
 LEFT JOIN album_users au on au.album_id = a.id
-WHERE au.user_id = $1
+WHERE au.user_id = $1 AND au.deleted_at IS NULL
 `
 
 func (q *Queries) AlbumGetByUser(ctx context.Context, userID int32) ([]Album, error) {

@@ -52,7 +52,7 @@ FROM links l
 LEFT JOIN directories d ON d.id = l.source_directory_id
 LEFT JOIN playlists p ON p.id = l.source_playlist_id
 LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
-WHERE d.user_id = $1 OR pu.user_id = $1
+WHERE d.user_id = $1 OR (pu.user_id = $1 AND pu.deleted_at IS NULL)
 `
 
 func (q *Queries) LinkGetByUser(ctx context.Context, userID int32) ([]Link, error) {

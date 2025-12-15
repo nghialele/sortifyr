@@ -96,7 +96,7 @@ const showGetByUser = `-- name: ShowGetByUser :many
 SELECT s.id, s.spotify_id, s.episode_amount, s.name, s.cover_url, s.cover_id, s.updated_at
 FROM shows s
 LEFT JOIN show_users su on su.show_id = s.id
-WHERE su.user_id = $1
+WHERE su.user_id = $1 AND su.deleted_at IS NULL
 `
 
 func (q *Queries) ShowGetByUser(ctx context.Context, userID int32) ([]Show, error) {

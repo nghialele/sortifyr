@@ -101,7 +101,7 @@ SELECT p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.co
 FROM playlists p
 LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
 LEFT JOIN users u ON u.id = p.owner_id
-WHERE pu.user_id = $1
+WHERE pu.user_id = $1 AND pu.deleted_at IS NULL
 ORDER BY p.name
 `
 

@@ -28,7 +28,8 @@ func (q *Queries) PlaylistTrackCreate(ctx context.Context, arg PlaylistTrackCrea
 }
 
 const playlistTrackDeleteByPlaylistTrack = `-- name: PlaylistTrackDeleteByPlaylistTrack :exec
-DELETE FROM playlist_tracks
+UPDATE playlist_tracks
+SET deleted_at = NOW()
 WHERE playlist_id = $1 AND track_id = $2
 `
 

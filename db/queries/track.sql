@@ -10,8 +10,8 @@ WHERE spotify_id = $1;
 -- name: TrackGetByPlaylist :many
 SELECT t.*
 FROM tracks t
-LEFT JOIN playlist_tracks p_t ON p_t.track_id = t.id
-WHERE p_t.playlist_id = $1;
+LEFT JOIN playlist_tracks pt ON pt.track_id = t.id
+WHERE pt.playlist_id = $1 AND pt.deleted_at IS NULL;
 
 -- name: TrackCreate :one
 INSERT INTO tracks (spotify_id, name, popularity)

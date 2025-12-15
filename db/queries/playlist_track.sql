@@ -4,5 +4,6 @@ VALUES ($1, $2)
 RETURNING id;
 
 -- name: PlaylistTrackDeleteByPlaylistTrack :exec
-DELETE FROM playlist_tracks
+UPDATE playlist_tracks
+SET deleted_at = NOW()
 WHERE playlist_id = $1 AND track_id = $2;

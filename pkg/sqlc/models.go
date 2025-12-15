@@ -71,9 +71,10 @@ type AlbumArtist struct {
 }
 
 type AlbumUser struct {
-	ID      int32
-	UserID  int32
-	AlbumID int32
+	ID        int32
+	UserID    int32
+	AlbumID   int32
+	DeletedAt pgtype.Timestamptz
 }
 
 type Artist struct {
@@ -137,12 +138,14 @@ type PlaylistTrack struct {
 	ID         int32
 	PlaylistID int32
 	TrackID    int32
+	DeletedAt  pgtype.Timestamptz
 }
 
 type PlaylistUser struct {
 	ID         int32
 	UserID     int32
 	PlaylistID int32
+	DeletedAt  pgtype.Timestamptz
 }
 
 type Show struct {
@@ -156,9 +159,10 @@ type Show struct {
 }
 
 type ShowUser struct {
-	ID     int32
-	UserID int32
-	ShowID int32
+	ID        int32
+	UserID    int32
+	ShowID    int32
+	DeletedAt pgtype.Timestamptz
 }
 
 type Task struct {

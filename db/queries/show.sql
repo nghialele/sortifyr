@@ -11,7 +11,7 @@ WHERE spotify_id = $1;
 SELECT s.*
 FROM shows s
 LEFT JOIN show_users su on su.show_id = s.id
-WHERE su.user_id = $1;
+WHERE su.user_id = $1 AND su.deleted_at IS NULL;
 
 -- name: ShowCreate :one
 INSERT INTO shows (spotify_id, episode_amount, name, cover_id, cover_url)

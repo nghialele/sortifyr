@@ -28,7 +28,8 @@ func (q *Queries) ShowUserCreate(ctx context.Context, arg ShowUserCreateParams) 
 }
 
 const showUserDeleteByUserShow = `-- name: ShowUserDeleteByUserShow :exec
-DELETE FROM show_users
+UPDATE show_users
+SET deleted_at = NOW()
 WHERE user_id = $1 AND show_id = $2
 `
 

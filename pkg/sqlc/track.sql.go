@@ -64,8 +64,8 @@ func (q *Queries) TrackGetAll(ctx context.Context) ([]Track, error) {
 const trackGetByPlaylist = `-- name: TrackGetByPlaylist :many
 SELECT t.id, t.spotify_id, t.name, t.popularity, t.updated_at
 FROM tracks t
-LEFT JOIN playlist_tracks p_t ON p_t.track_id = t.id
-WHERE p_t.playlist_id = $1
+LEFT JOIN playlist_tracks pt ON pt.track_id = t.id
+WHERE pt.playlist_id = $1 AND pt.deleted_at IS NULL
 `
 
 func (q *Queries) TrackGetByPlaylist(ctx context.Context, playlistID int32) ([]Track, error) {

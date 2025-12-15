@@ -11,7 +11,7 @@ WHERE spotify_id = $1;
 SELECT a.*
 FROM albums a
 LEFT JOIN album_users au on au.album_id = a.id
-WHERE au.user_id = $1;
+WHERE au.user_id = $1 AND au.deleted_at IS NULL;
 
 -- name: AlbumCreate :one
 INSERT INTO albums (spotify_id, name, track_amount, popularity, cover_id, cover_url)
