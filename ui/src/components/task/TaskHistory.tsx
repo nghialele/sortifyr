@@ -1,13 +1,11 @@
-import { Task, TaskHistory as TaskHistoryType } from "@/lib/types/task";
+import { useTaskGetHistory } from "@/lib/api/task";
+import { TaskHistoryFilter } from "@/lib/types/task";
 import { formatDate } from "@/lib/utils";
 import { Table } from "../molecules/Table";
 import { TaskResult } from "./TaskResult";
 
-
 type Props = {
-  tasks: Task[];
-  history: TaskHistoryType[];
-  isLoading: boolean;
+  filter?: TaskHistoryFilter;
 }
 
 const formatDuration = (nanos: number) => {
@@ -20,7 +18,15 @@ const formatDuration = (nanos: number) => {
   return <span>{sString}<span className="text-muted-foreground">{msString}</span></span>
 }
 
-export const TaskHistory = ({ history, isLoading }: Props) => {
+export const TaskHistory = ({ filter }: Props) => {
+  const { history, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useTaskGetHistory(filter)
+
+  const handleBottom = () => {
+    if (!hasNextPage) return
+    if (isFetchingNextPage) return
+
+    fetchNextPage()
+  }
 
   return (
     <Table
@@ -41,6 +47,7 @@ export const TaskHistory = ({ history, isLoading }: Props) => {
       ]}
       records={history}
       fetching={isLoading}
+      onScrollToBottom={handleBottom}
     />
   )
 }

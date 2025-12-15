@@ -1,26 +1,16 @@
-import { BottomOfPage } from "@/components/atoms/BottomOfPage"
 import { Page, PageTitle, Section, SectionTitle } from "@/components/atoms/Page"
 import { Select } from "@/components/molecules/Select"
 import { TaskHistory } from "@/components/task/TaskHistory"
 import { TaskTable } from "@/components/task/TaskTable"
-import { useTaskGetAll, useTaskGetHistory } from "@/lib/api/task"
+import { useTaskGetAll } from "@/lib/api/task"
 import { TaskHistoryFilter, TaskResult } from "@/lib/types/task"
 import { Chip, Group } from "@mantine/core"
 import { useState } from "react"
-import useInfiniteScroll from "react-infinite-scroll-hook"
 
 export const Tasks = () => {
   const [filter, setFilter] = useState<TaskHistoryFilter>({});
 
   const { data: tasks, isLoading: isLoadingTasks } = useTaskGetAll()
-  const { history, isLoading: isLoadingHistory, isFetchingNextPage, hasNextPage, fetchNextPage } = useTaskGetHistory(filter)
-
-  const [sentryRef] = useInfiniteScroll({
-    loading: isFetchingNextPage,
-    hasNextPage: Boolean(hasNextPage),
-    onLoadMore: fetchNextPage,
-    rootMargin: "0px",
-  });
 
   const handleTaskChange = (value: string | null) => {
     setFilter({ ...filter, uid: value ? value : undefined })
@@ -70,12 +60,7 @@ export const Tasks = () => {
             <Chip value="failed" color="secondary.2">Error</Chip>
           </Chip.Group>
         </Group>
-        <TaskHistory
-          tasks={tasks ?? []}
-          history={history ?? []}
-          isLoading={isLoadingHistory}
-        />
-        <BottomOfPage ref={sentryRef} showLoading={isFetchingNextPage} hasNextPage={hasNextPage} />
+        <TaskHistory filter={filter} />
       </Section>
     </Page>
   )
