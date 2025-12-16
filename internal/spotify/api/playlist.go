@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/pkg/concurrent"
 	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
@@ -56,20 +58,39 @@ type playlistTrackResponse struct {
 }
 
 func (c *Client) PlaylistGetTrackAll(ctx context.Context, user model.User, spotifyID string) ([]Track, error) {
-	tracks := make([]Track, 0)
+	wg := concurrent.NewLimitedWaitGroup(12)
 
-	total := 51
+	var mu sync.Mutex
+	var errs []error
+
+	tracks := make([]Track, 0)
+	total := 0
 	limit := 50
 
-	for i := 0; i < total; i += limit {
-		var resp playlistTrackResponse
+	// Do the first request to get the total
+	var resp playlistTrackResponse
+	if err := c.request(ctx, user, http.MethodGet, fmt.Sprintf("playlists/%s/tracks?offset=%d&limit=%d", spotifyID, 0, limit), http.NoBody, &resp); err != nil {
+		return nil, fmt.Errorf("get playlist tracks with limit %d and offset %d | %w", limit, 0, err)
+	}
 
-		if err := c.request(ctx, user, http.MethodGet, fmt.Sprintf("playlists/%s/tracks?offset=%d&limit=%d", spotifyID, i, limit), http.NoBody, &resp); err != nil {
-			return nil, fmt.Errorf("get playlist tracks with limit %d and offset %d | %w", limit, i, err)
-		}
+	tracks = append(tracks, utils.SliceMap(resp.Items, func(t playlistTrackAPI) Track { return t.Track })...)
+	total = resp.Total
 
-		tracks = append(tracks, utils.SliceMap(resp.Items, func(t playlistTrackAPI) Track { return t.Track })...)
-		total = resp.Total
+	for i := limit; i < total; i += limit {
+		wg.Go(func() {
+			var resp playlistTrackResponse
+
+			if err := c.request(ctx, user, http.MethodGet, fmt.Sprintf("playlists/%s/tracks?offset=%d&limit=%d", spotifyID, i, limit), http.NoBody, &resp); err != nil {
+				mu.Lock()
+				errs = append(errs, fmt.Errorf("get playlist tracks with limit %d and offset %d | %w", limit, i, err))
+				mu.Unlock()
+				return
+			}
+
+			mu.Lock()
+			tracks = append(tracks, utils.SliceMap(resp.Items, func(t playlistTrackAPI) Track { return t.Track })...)
+			mu.Unlock()
+		})
 	}
 
 	return tracks, nil

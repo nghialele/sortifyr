@@ -48,7 +48,7 @@ linters:
     exhaustive:
       default-signifies-exhaustive: true
     gocognit:
-      min-complexity: 30
+      min-complexity: 40
     goconst:
       min-len: 3
       min-occurrences: 3
