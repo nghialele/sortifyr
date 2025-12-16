@@ -2,11 +2,14 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/pkg/concurrent"
 )
 
 func (c *Client) ArtistGet(ctx context.Context, user model.User, spotifyID string) (Artist, error) {
@@ -24,19 +27,36 @@ type artistAllResponse struct {
 }
 
 func (c *Client) ArtistGetAll(ctx context.Context, user model.User, artistIDs []string) ([]Artist, error) {
-	artists := make([]Artist, 0, len(artistIDs))
+	wg := concurrent.NewLimitedWaitGroup(12)
 
+	var mu sync.Mutex
+	var errs []error
+
+	artists := make([]Artist, 0, len(artistIDs))
 	limit := 50
 
 	for i := 0; i < len(artistIDs); i += limit {
-		var resp artistAllResponse
+		wg.Go(func() {
+			var resp artistAllResponse
 
-		url := "artists?ids=" + strings.Join(artistIDs[i:min(len(artistIDs), i+limit)], ",")
-		if err := c.request(ctx, user, http.MethodGet, url, http.NoBody, &resp); err != nil {
-			return nil, err
-		}
+			url := "artists?ids=" + strings.Join(artistIDs[i:min(len(artistIDs), i+limit)], ",")
+			if err := c.request(ctx, user, http.MethodGet, url, http.NoBody, &resp); err != nil {
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+				return
+			}
 
-		artists = append(artists, resp.Artists...)
+			mu.Lock()
+			artists = append(artists, resp.Artists...)
+			mu.Unlock()
+		})
+	}
+
+	wg.Wait()
+
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
 	}
 
 	return artists, nil
