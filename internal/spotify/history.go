@@ -2,44 +2,47 @@ package spotify
 
 import (
 	"context"
-	"fmt"
+	"time"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/internal/spotify/api"
 )
 
-func (c *client) historySync(ctx context.Context, user model.User) (string, error) {
+func (c *client) historySync(ctx context.Context, user model.User) error {
 	latest, err := c.history.GetLatest(ctx, user.ID)
 	if err != nil {
-		return "", err
+		return err
 	}
 	if latest == nil {
 		latest = &model.History{}
 	}
 
-	historySpotify, err := c.api.PlayerGetHistory(ctx, user)
+	current, err := c.api.PlayerGetCurrent(ctx, user)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	toCreate := make([]api.History, 0)
+	now := time.Now()
 
-	for i := range historySpotify {
-		if !latest.PlayedAt.Before(historySpotify[i].PlayedAt) {
-			break
-		}
-
-		toCreate = append(toCreate, historySpotify[i])
+	if !current.IsPlaying {
+		return nil
 	}
 
-	// Create history
-	for _, h := range toCreate {
-		if err := c.historyOneSync(ctx, user, h); err != nil {
-			return "", err
-		}
+	// Listen at least 20 seconds
+	if current.ProgressMs < 20*1000 {
+		return nil
 	}
 
-	return fmt.Sprintf("Tracks added: %d", len(toCreate)), nil
+	// Add a 5 second buffer
+	if latest.PlayedAt.Add(5 * time.Second).After(now.Add(time.Duration(-current.ProgressMs) * time.Millisecond)) {
+		return nil
+	}
+
+	return c.historyOneSync(ctx, user, api.History{
+		Track:    current.Track,
+		PlayedAt: now.Add(time.Duration(-current.ProgressMs) * time.Millisecond),
+		Context:  current.Context,
+	})
 }
 
 func (c *client) historyOneSync(ctx context.Context, user model.User, history api.History) error {

@@ -78,7 +78,7 @@ func (c *client) taskRegister() error {
 	if err := task.Manager.Add(context.Background(), task.NewTask(
 		taskHistoryUID,
 		"History",
-		config.GetDefaultDuration("task.history_s", 10*60),
+		config.GetDefaultDuration("task.history_s", 15),
 		c.taskWrap(c.taskHistory),
 	)); err != nil {
 		return err
@@ -204,7 +204,7 @@ func (c *client) taskUser(ctx context.Context, users []model.User, results []tas
 
 func (c *client) taskHistory(ctx context.Context, users []model.User, results []task.TaskResult) {
 	for i, user := range users {
-		if _, err := c.historySync(ctx, user); err != nil {
+		if err := c.historySync(ctx, user); err != nil {
 			results[i].Error = fmt.Errorf("get history %w", err)
 		}
 	}

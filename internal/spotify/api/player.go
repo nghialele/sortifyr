@@ -19,3 +19,16 @@ func (c *Client) PlayerGetHistory(ctx context.Context, user model.User) ([]Histo
 
 	return resp.Items, nil
 }
+
+type playerCurrentResponse struct {
+	Current
+}
+
+func (c *Client) PlayerGetCurrent(ctx context.Context, user model.User) (Current, error) {
+	var resp playerCurrentResponse
+	if err := c.request(ctx, user, http.MethodGet, "me/player/currently-playing", http.NoBody, &resp); err != nil {
+		return Current{}, err
+	}
+
+	return resp.Current, nil
+}

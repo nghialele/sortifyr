@@ -81,6 +81,13 @@ type History struct {
 	Context  Context   `json:"context"`
 }
 
+type Current struct {
+	Track      Track   `json:"item"`
+	ProgressMs int     `json:"progress_ms"`
+	IsPlaying  bool    `json:"is_playing"`
+	Context    Context `json:"context"`
+}
+
 func (h History) ToModel(user model.User) model.History {
 	return model.History{
 		UserID:   user.ID,
