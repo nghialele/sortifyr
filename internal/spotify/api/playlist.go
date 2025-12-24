@@ -93,6 +93,8 @@ func (c *Client) PlaylistGetTrackAll(ctx context.Context, user model.User, spoti
 		})
 	}
 
+	wg.Wait()
+
 	return tracks, nil
 }
 
