@@ -5,13 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 
 	"github.com/google/uuid"
 	"github.com/topvennie/sortifyr/pkg/concurrent"
 	"github.com/topvennie/sortifyr/pkg/storage"
-	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
 func uriToID(uri string) string {
@@ -30,15 +30,27 @@ type syncUserDataStruct[T any] struct {
 	Get            func(T) (*T, error) // Get a db item
 	Create         func(*T) error      // Create a new db item
 	CreateUserLink func(T) error       // Link a database item to the user
-	DeleteUserLink func(T) error       // Delete an item
+	DeleteUserLink func(T) error       // Delete the link between an item and the user
 }
 
 func syncUserData[T any](s syncUserDataStruct[T]) error {
+	// Copy our database list
+	// This allows us to delete items once found
+	// which in turns supports multiple items in the same list
+	// This is relevant for, for example, multiple instances of
+	// the same track in a playlist
+	dbCopy := make([]T, len(s.DB))
+	copy(dbCopy, s.DB)
+
 	// Go over every entry in the api list
 	// to find missing entries
 	for i := range s.API {
-		if _, ok := utils.SliceFind(s.DB, func(t T) bool { return s.Equal(t, s.API[i]) }); ok {
+		if idx := slices.IndexFunc(dbCopy, func(t T) bool { return s.Equal(t, s.API[i]) }); idx != -1 {
 			// The user already has this entry
+			// Remove the entry from the list
+			dbCopy[idx] = dbCopy[len(dbCopy)-1]
+			dbCopy = dbCopy[:len(dbCopy)-1]
+
 			continue
 		}
 
@@ -67,15 +79,28 @@ func syncUserData[T any](s syncUserDataStruct[T]) error {
 		}
 	}
 
+	// Same principle as the db copy but this time
+	// to support deleting copies when the api no
+	// longer has the copy
+	apiCopy := make([]T, len(s.API))
+	copy(apiCopy, s.API)
+
 	// Do the same but let's look for
 	// items that need to be deleted
 	for i := range s.DB {
-		if _, ok := utils.SliceFind(s.API, func(t T) bool { return s.Equal(t, s.DB[i]) }); !ok {
-			// Item is in our db but not in the spotify api list
-			// So we have to delete it
-			if err := s.DeleteUserLink(s.DB[i]); err != nil {
-				return err
-			}
+		if idx := slices.IndexFunc(apiCopy, func(t T) bool { return s.Equal(t, s.DB[i]) }); idx != -1 {
+			// Item is in our api list
+			// Let's delete it to support copies
+			apiCopy[idx] = apiCopy[len(apiCopy)-1]
+			apiCopy = apiCopy[:len(apiCopy)-1]
+
+			continue
+		}
+
+		// Item is in our db but not in the spotify api list
+		// So we have to delete it
+		if err := s.DeleteUserLink(s.DB[i]); err != nil {
+			return err
 		}
 	}
 
