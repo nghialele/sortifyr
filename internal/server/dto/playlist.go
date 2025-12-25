@@ -2,6 +2,7 @@ package dto
 
 import (
 	"github.com/topvennie/sortifyr/internal/database/model"
+	"github.com/topvennie/sortifyr/pkg/utils"
 )
 
 type Playlist struct {
@@ -41,5 +42,17 @@ func (p Playlist) ToModel() *model.Playlist {
 		TrackAmount:   p.TrackAmount,
 		Collaborative: p.Collaborative,
 		Owner:         *p.Owner.ToModel(),
+	}
+}
+
+type PlaylistDuplicate struct {
+	Playlist
+	Duplicates []Track `json:"duplicates"`
+}
+
+func PlaylistDuplicateDTO(playlist *model.Playlist, user *model.User, duplicates []model.Track) PlaylistDuplicate {
+	return PlaylistDuplicate{
+		Playlist:   PlaylistDTO(playlist, user),
+		Duplicates: utils.SliceMap(duplicates, func(t model.Track) Track { return TrackDTO(&t) }),
 	}
 }

@@ -74,6 +74,29 @@ func (p *Playlist) GetByUserPopulated(ctx context.Context, userID int) ([]*model
 	}), nil
 }
 
+func (p *Playlist) GetDuplicateTracksByUser(ctx context.Context, userID int) ([]*model.Playlist, error) {
+	entries, err := p.repo.queries(ctx).PlaylistGetDuplicateTracksByUser(ctx, int32(userID))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get duplicate playlists tracks by user %d | %w", userID, err)
+	}
+
+	playlistMap := make(map[int]*model.Playlist)
+	for i := range entries {
+		playlist, ok := playlistMap[int(entries[i].Playlist.ID)]
+		if !ok {
+			playlist = model.PlaylistModelPopulated(entries[i].Playlist, entries[i].User)
+		}
+
+		playlist.Duplicates = append(playlist.Duplicates, *model.TrackModel(entries[i].Track))
+		playlistMap[playlist.ID] = playlist
+	}
+
+	return utils.MapValues(playlistMap), nil
+}
+
 func (p *Playlist) Create(ctx context.Context, playlist *model.Playlist) error {
 	id, err := p.repo.queries(ctx).PlaylistCreate(ctx, sqlc.PlaylistCreateParams{
 		SpotifyID:     playlist.SpotifyID,

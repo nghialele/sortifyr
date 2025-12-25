@@ -147,3 +147,8 @@ func (c *client) playlistCoverSync(ctx context.Context, user model.User) error {
 		}
 	}))
 }
+
+func (c *client) PlaylistRemoveDuplicates(_ context.Context, _ model.User) error {
+	// TODO: Implement
+	return nil
+}

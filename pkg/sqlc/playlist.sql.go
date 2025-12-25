@@ -187,6 +187,73 @@ func (q *Queries) PlaylistGetByUserWithOwner(ctx context.Context, userID int32) 
 	return items, nil
 }
 
+const playlistGetDuplicateTracksByUser = `-- name: PlaylistGetDuplicateTracksByUser :many
+SELECT p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, t.id, t.spotify_id, t.name, t.popularity, t.updated_at, u.id, u.uid, u.name, u.display_name, u.email
+FROM playlist_tracks pt
+JOIN (
+  SELECT playlist_id, track_id
+  FROM playlist_tracks
+  GROUP BY playlist_id, track_id
+  HAVING COUNT(*) > 1
+) dup
+ON dup.playlist_id = pt.playlist_id
+AND dup.track_id = pt.track_id
+LEFT JOIN playlists p ON p.id = pt.playlist_id
+LEFT JOIN tracks t ON t.id = pt.track_id
+LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
+LEFT JOIN users u ON u.id = p.owner_id
+WHERE pu.user_id = $1 AND p.owner_id IS NOT NULL AND pu.deleted_at IS NULL
+ORDER BY pt.playlist_id, pt.track_id, pt.id
+`
+
+type PlaylistGetDuplicateTracksByUserRow struct {
+	Playlist Playlist
+	Track    Track
+	User     User
+}
+
+func (q *Queries) PlaylistGetDuplicateTracksByUser(ctx context.Context, userID int32) ([]PlaylistGetDuplicateTracksByUserRow, error) {
+	rows, err := q.db.Query(ctx, playlistGetDuplicateTracksByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PlaylistGetDuplicateTracksByUserRow
+	for rows.Next() {
+		var i PlaylistGetDuplicateTracksByUserRow
+		if err := rows.Scan(
+			&i.Playlist.ID,
+			&i.Playlist.SpotifyID,
+			&i.Playlist.Name,
+			&i.Playlist.Description,
+			&i.Playlist.Public,
+			&i.Playlist.TrackAmount,
+			&i.Playlist.Collaborative,
+			&i.Playlist.CoverID,
+			&i.Playlist.CoverUrl,
+			&i.Playlist.OwnerID,
+			&i.Playlist.UpdatedAt,
+			&i.Track.ID,
+			&i.Track.SpotifyID,
+			&i.Track.Name,
+			&i.Track.Popularity,
+			&i.Track.UpdatedAt,
+			&i.User.ID,
+			&i.User.Uid,
+			&i.User.Name,
+			&i.User.DisplayName,
+			&i.User.Email,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const playlistUpdateBySpotify = `-- name: PlaylistUpdateBySpotify :exec
 UPDATE playlists
 SET 

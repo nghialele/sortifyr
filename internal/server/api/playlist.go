@@ -25,6 +25,8 @@ func NewPlaylist(router fiber.Router, service service.Service) *Playlist {
 func (p *Playlist) routes() {
 	p.router.Get("/", p.getAll)
 	p.router.Get("/cover/:id", p.getCover)
+	p.router.Get("/duplicate", p.getDuplicates)
+	p.router.Post("/duplicate", p.removeDuplicates)
 }
 
 func (p *Playlist) getAll(c *fiber.Ctx) error {
@@ -55,4 +57,31 @@ func (p *Playlist) getCover(c *fiber.Ctx) error {
 	c.Set("Content-Type", mimeWEBP)
 
 	return sendCached(c, cover)
+}
+
+func (p *Playlist) getDuplicates(c *fiber.Ctx) error {
+	userID, ok := c.Locals("userID").(int)
+	if !ok {
+		return fiber.ErrUnauthorized
+	}
+
+	playlists, err := p.playlist.GetDuplicates(c.Context(), userID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(playlists)
+}
+
+func (p *Playlist) removeDuplicates(c *fiber.Ctx) error {
+	userID, ok := c.Locals("userID").(int)
+	if !ok {
+		return fiber.ErrUnauthorized
+	}
+
+	if err := p.playlist.RemoveDuplicates(c.Context(), userID); err != nil {
+		return err
+	}
+
+	return c.SendStatus(fiber.StatusNoContent)
 }

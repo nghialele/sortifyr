@@ -98,7 +98,7 @@ func (c *Client) PlaylistGetTrackAll(ctx context.Context, user model.User, spoti
 	return tracks, nil
 }
 
-type playlistTrackPayload struct {
+type playlistTrackAddPayload struct {
 	URIs []string `json:"uris"`
 }
 
@@ -109,7 +109,7 @@ func (c *Client) PlaylistPostTrackAll(ctx context.Context, user model.User, spot
 	for current < total {
 		end := min(current+100, total)
 
-		payload := playlistTrackPayload{
+		payload := playlistTrackAddPayload{
 			URIs: utils.SliceMap(tracks[current:end], func(t model.Track) string { return "spotify:track:" + t.SpotifyID }),
 		}
 
@@ -127,5 +127,17 @@ func (c *Client) PlaylistPostTrackAll(ctx context.Context, user model.User, spot
 		current = end
 	}
 
+	return nil
+}
+
+type _ struct {
+	Tracks []struct {
+		URI string `json:"rui"`
+	} `json:"tracks"`
+	SnapshotID string `json:"snapshot_id"`
+}
+
+func (c *Client) PlaylistDeleteTrack(_ context.Context, _ model.User, _ string, _ []model.Track) error {
+	// TODO: Implement
 	return nil
 }
