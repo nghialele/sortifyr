@@ -2,12 +2,14 @@ import { DataTable, DataTableProps } from "mantine-datatable";
 import { LoadingSpinner } from "./LoadingSpinner"
 import { useAutoAnimate } from '@formkit/auto-animate/react'
 
-type Props<T> = Omit<
+type Props<T> = {
+  animated?: boolean;
+} & Omit<
   DataTableProps<T>,
   "withTableBorder" | "styles"
 > & Record<string, unknown>;
 
-export const Table = <T,>(props: Props<T>) => {
+export const Table = <T,>({ animated = true, ...props }: Props<T>) => {
   const [bodyRef] = useAutoAnimate<HTMLTableSectionElement>();
 
   return (
@@ -25,7 +27,7 @@ export const Table = <T,>(props: Props<T>) => {
           background: theme.colors.secondary[1],
         }),
       }}
-      bodyRef={bodyRef}
+      bodyRef={animated ? bodyRef : undefined}
       {...props}
     />
   );

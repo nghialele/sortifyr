@@ -73,7 +73,7 @@ export function useTaskStart() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ uid }: Pick<Task, "uid">) => apiPost(`${ENDPOINT}/start/${uid}`),
+    mutationFn: ({ uid }: Pick<Task, "uid">) => apiPost(`${ENDPOINT}/start/${uid}`),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["task"] });
       void queryClient.invalidateQueries({ queryKey: ["task_history"] });

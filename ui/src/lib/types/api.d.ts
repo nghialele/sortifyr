@@ -21,6 +21,10 @@ export namespace API {
     has_cover: boolean;
   }
 
+  export interface PlaylistDuplicate extends Playlist {
+    duplicates: Track[],
+  }
+
   export interface Directory extends Base {
     name: string;
     children?: Directory[];

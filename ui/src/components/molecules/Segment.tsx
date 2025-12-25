@@ -1,15 +1,17 @@
 import { SegmentedControl, SegmentedControlProps } from "@mantine/core";
 
-type Props = SegmentedControlProps
+type Props = {
+  secondary?: boolean;
+} & SegmentedControlProps
 
-export const Segment = (props: Props) => {
+export const Segment = ({ secondary, ...props }: Props) => {
   return (
     <SegmentedControl
       radius="lg"
-      color="secondary.1"
+      color={secondary ? "secondary.1" : "primary.3"}
       styles={{
         innerLabel: {
-          color: "black",
+          color: secondary ? "black" : undefined,
         },
       }}
       {...props}
