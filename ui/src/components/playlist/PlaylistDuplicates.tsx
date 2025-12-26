@@ -1,8 +1,8 @@
 import { usePlaylistGetDuplicates, usePlaylistRemoveDuplicates } from "@/lib/api/playlist"
 import { Playlist } from "@/lib/types/playlist"
-import { Track } from "@/lib/types/track"
 import { Button, Group } from "@mantine/core"
 import { useDisclosure } from "@mantine/hooks"
+import { notifications } from "@mantine/notifications"
 import { sortBy } from "lodash"
 import { type DataTableSortStatus } from "mantine-datatable"
 import { useMemo, useState } from "react"
@@ -10,11 +10,6 @@ import { SectionTitle } from "../atoms/Page"
 import { Confirm } from "../molecules/Confirm"
 import { Table } from "../molecules/Table"
 import { PlaylistCover } from "./PlaylistCover"
-import { notifications } from "@mantine/notifications"
-
-interface Duplicate extends Track {
-  amount: number;
-}
 
 export const PlaylistDuplicates = () => {
   const { data: playlists, isLoading } = usePlaylistGetDuplicates()
@@ -37,23 +32,6 @@ export const PlaylistDuplicates = () => {
       onSettled: () => close(),
     })
   }
-
-  const duplicates: Record<number, Duplicate[]> = useMemo(() => {
-    return Object.fromEntries(
-      playlists?.map(p => {
-        const counts = p.duplicates.reduce<Record<number, Duplicate>>((acc, t) => {
-          acc[t.id] ??= { ...t, amount: 0 }
-          acc[t.id].amount++
-          return acc
-        }, {})
-
-        return [
-          p.id,
-          Object.values(counts).sort((a, b) => b.amount - a.amount),
-        ]
-      }) ?? []
-    )
-  }, [playlists])
 
   return (
     <>
@@ -82,17 +60,17 @@ export const PlaylistDuplicates = () => {
             accessor: "duplicates",
             title: "Unique duplicates",
             sortable: true,
-            render: ({ id }) => <p>{duplicates[id].length}</p>
+            render: ({ duplicates }) => <p>{duplicates.length}</p>
           },
           {
             accessor: "duplicates",
             title: "Total duplicates",
             sortable: true,
-            render: ({ duplicates }) => <p>{duplicates.length}</p>
+            render: ({ duplicates }) => <p>{duplicates.reduce((acc, curr) => acc + curr.amount, 0)}</p>
           },
         ]}
         rowExpansion={{
-          content: ({ record: { id } }) => (
+          content: ({ record: { duplicates } }) => (
             <Table
               noHeader
               backgroundColor="background.1"
@@ -100,7 +78,7 @@ export const PlaylistDuplicates = () => {
                 { accessor: "name" },
                 { accessor: "amount" }
               ]}
-              records={duplicates[id]}
+              records={duplicates}
               height={180}
               className="m-4"
             />

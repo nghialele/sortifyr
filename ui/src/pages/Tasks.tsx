@@ -34,6 +34,7 @@ export const Tasks = () => {
       <Section className="flex-none">
         <SectionTitle
           title="Active tasks"
+          description="A refresh is recommened after a manually started task has finished."
         />
         <TaskTable
           tasks={tasks ?? []}

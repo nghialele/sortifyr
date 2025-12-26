@@ -66,6 +66,17 @@ export const convertTracksDeleted = (t: API.TrackDeleted[]): TrackDeleted[] => {
   return t.map(convertTrackDeleted)
 }
 
+export interface TrackDuplicate extends Track {
+  amount: number;
+}
+
+export const convertTrackDuplicate = (t: API.TrackDuplicate): TrackDuplicate => {
+  return {
+    ...convertTrack(t),
+    amount: t.amount,
+  }
+}
+
 export interface TrackFilter {
   playlistId?: string;
 }

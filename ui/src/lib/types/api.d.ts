@@ -22,7 +22,7 @@ export namespace API {
   }
 
   export interface PlaylistDuplicate extends Playlist {
-    duplicates: Track[],
+    duplicates: TrackDuplicate[],
   }
 
   export interface Directory extends Base {
@@ -77,5 +77,9 @@ export namespace API {
   export interface TrackDeleted extends Track {
     playlist: Playlist;
     deleted_at: string;
+  }
+
+  export interface TrackDuplicate extends Track {
+    amount: number;
   }
 }

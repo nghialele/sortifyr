@@ -47,12 +47,28 @@ func (p Playlist) ToModel() *model.Playlist {
 
 type PlaylistDuplicate struct {
 	Playlist
-	Duplicates []Track `json:"duplicates"`
+	Duplicates []TrackDuplicate `json:"duplicates"`
 }
 
 func PlaylistDuplicateDTO(playlist *model.Playlist, user *model.User, duplicates []model.Track) PlaylistDuplicate {
+	type trackAmount struct {
+		track  model.Track
+		amount int
+	}
+
+	duplicateMap := make(map[int]trackAmount)
+	for i := range duplicates {
+		d, ok := duplicateMap[duplicates[i].ID]
+		if !ok {
+			d = trackAmount{track: duplicates[i], amount: 0}
+		}
+
+		d.amount++
+		duplicateMap[duplicates[i].ID] = d
+	}
+
 	return PlaylistDuplicate{
 		Playlist:   PlaylistDTO(playlist, user),
-		Duplicates: utils.SliceMap(duplicates, func(t model.Track) Track { return TrackDTO(&t) }),
+		Duplicates: utils.SliceMap(utils.MapValues(duplicateMap), func(t trackAmount) TrackDuplicate { return TrackDuplicateDTO(&t.track, t.amount) }),
 	}
 }

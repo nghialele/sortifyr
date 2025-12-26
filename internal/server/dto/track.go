@@ -66,6 +66,19 @@ func TrackDeletedDTO(t *model.Track) TrackDeleted {
 	}
 }
 
+type TrackDuplicate struct {
+	Track
+
+	Amount int `json:"amount"`
+}
+
+func TrackDuplicateDTO(t *model.Track, amount int) TrackDuplicate {
+	return TrackDuplicate{
+		Track:  TrackDTO(t),
+		Amount: amount,
+	}
+}
+
 type History struct {
 	Track
 
