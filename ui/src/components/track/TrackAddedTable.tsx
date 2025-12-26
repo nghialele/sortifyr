@@ -25,6 +25,7 @@ export const TrackAddedTable = ({ filter }: Props) => {
         { accessor: "createdAt", render: ({ createdAt }) => <p className="text-muted">{formatDate(createdAt)}</p> }
       ]}
       records={tracks}
+      noRecordsText="No recored tracks added yet"
       fetching={isLoading || isFetchingNextPage}
       onScrollToBottom={handleBottom}
     />

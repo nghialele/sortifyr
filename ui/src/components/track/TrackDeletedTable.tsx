@@ -25,6 +25,7 @@ export const TrackDeletedTable = ({ filter }: Props) => {
         { accessor: "deletedAt", render: ({ deletedAt }) => <p className="text-muted">{formatDate(deletedAt)}</p> }
       ]}
       records={tracks}
+      noRecordsText="No recorded deleted tracks yet"
       fetching={isLoading || isFetchingNextPage}
       onScrollToBottom={handleBottom}
     />

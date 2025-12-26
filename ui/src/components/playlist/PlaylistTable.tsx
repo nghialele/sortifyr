@@ -46,6 +46,7 @@ export const PlaylistTable = ({ playlists, isLoading }: Props) => {
         },
       ]}
       records={records}
+      noRecordsText="No playlists. Run the playlist task to get started."
       sortStatus={sortStatus}
       onSortStatusChange={setSortStatus}
       fetching={isLoading}

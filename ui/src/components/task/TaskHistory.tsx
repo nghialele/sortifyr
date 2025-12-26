@@ -46,6 +46,7 @@ export const TaskHistory = ({ filter }: Props) => {
         },
       ]}
       records={history}
+      noRecordsText="No tasks run yet"
       fetching={isLoading}
       onScrollToBottom={handleBottom}
     />

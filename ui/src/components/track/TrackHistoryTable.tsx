@@ -20,6 +20,7 @@ export const TrackHistoryTable = () => {
         { accessor: "playedAt", render: ({ playedAt }) => <p className="text-muted">{formatDate(playedAt)}</p> }
       ]}
       records={history}
+      noRecordsText="No recorded tracks yet"
       fetching={isLoading || isFetchingNextPage}
       onScrollToBottom={handleBottom}
     />

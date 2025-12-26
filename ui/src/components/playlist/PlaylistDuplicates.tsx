@@ -107,10 +107,12 @@ export const PlaylistDuplicates = () => {
           )
         }}
         records={records}
+        noRecordsText="No playlist with duplicates"
         sortStatus={sortStatus}
         onSortStatusChange={setSortStatus}
         fetching={isLoading}
         animated={false}
+
       />
 
       <Confirm

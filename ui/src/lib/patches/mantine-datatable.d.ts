@@ -26,6 +26,7 @@ declare module "mantine-datatable" {
     };
 
     noHeader?: boolean;
+    noRecordsText?: string;
     backgroundColor?: string;
     minHeight?: number;
     maxHeight?: number;

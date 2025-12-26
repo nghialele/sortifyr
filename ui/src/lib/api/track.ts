@@ -4,7 +4,7 @@ import { convertTrackHistories, convertTracksAdded, convertTracksDeleted, TrackF
 import { apiGet } from "./query"
 
 const ENDPOINT = "track"
-const PAGE_LIMIT = 50
+const PAGE_LIMIT = 100
 
 export const useTrackGetHistory = () => {
   const { data, isLoading, fetchNextPage, isFetchingNextPage, hasNextPage, error, refetch, isFetching } = useInfiniteQuery({
