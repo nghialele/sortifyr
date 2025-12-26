@@ -64,10 +64,20 @@ func (p *Playlist) GetCover(ctx context.Context, playlistID int) ([]byte, error)
 }
 
 func (p *Playlist) GetDuplicates(ctx context.Context, userID int) ([]dto.PlaylistDuplicate, error) {
-	playlists, err := p.playlist.GetDuplicateTracksByUser(ctx, userID)
+	playlistsAll, err := p.playlist.GetDuplicateTracksByUser(ctx, userID)
 	if err != nil {
 		zap.S().Error(err)
 		return nil, fiber.ErrInternalServerError
+	}
+
+	// Filter out tracks without spotify id
+	// We can't delete them with the api
+	playlists := make([]*model.Playlist, 0)
+	for i := range playlistsAll {
+		playlistsAll[i].Duplicates = utils.SliceFilter(playlistsAll[i].Duplicates, func(t model.Track) bool { return t.SpotifyID != "" })
+		if len(playlistsAll[i].Duplicates) > 0 {
+			playlists = append(playlists, playlistsAll[i])
+		}
 	}
 
 	return utils.SliceMap(playlists, func(p *model.Playlist) dto.PlaylistDuplicate {
