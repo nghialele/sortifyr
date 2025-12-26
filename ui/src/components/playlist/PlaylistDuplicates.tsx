@@ -80,6 +80,13 @@ export const PlaylistDuplicates = () => {
           { accessor: "owner.name", sortable: true },
           {
             accessor: "duplicates",
+            title: "Unique duplicates",
+            sortable: true,
+            render: ({ id }) => <p>{duplicates[id].length}</p>
+          },
+          {
+            accessor: "duplicates",
+            title: "Total duplicates",
             sortable: true,
             render: ({ duplicates }) => <p>{duplicates.length}</p>
           },
