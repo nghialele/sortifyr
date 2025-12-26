@@ -77,7 +77,7 @@ func (c *client) taskRegister() error {
 
 	if err := task.Manager.Add(context.Background(), task.NewTask(
 		taskHistoryUID,
-		"History",
+		"Current",
 		config.GetDefaultDuration("task.history_s", 15),
 		c.taskWrap(c.taskHistory),
 	)); err != nil {
