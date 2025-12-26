@@ -23,6 +23,12 @@ declare module "mantine-datatable" {
       content: (params: { record: T, index: number, collapse: () => void }) => ReactNode,
       collapseProps?: CollapseProps,
       allowMultiple?: boolean,
+      expandable?: (params: { record: T, index: number }) => boolean,
+      trigger?: "click" | "always" | "never",
+      expanded?: {
+        recordIds: unknown[],
+        onRecordIdsChange?: React.Dispatch<React.SetStateAction<any[]>> | ((recordIds: unknown[]) => void); // eslint-disable-line @typescript-eslint/no-explicit-any
+      },
     };
 
     noHeader?: boolean;
@@ -32,14 +38,14 @@ declare module "mantine-datatable" {
     maxHeight?: number;
     height?: number;
     borderRadius?: "xs" | "sm" | "md" | "lg" | "xl";
-    withTableBorder: boolean;
+    withTableBorder?: boolean;
     highlightOnHover?: boolean;
 
     fetching?: boolean;
     customLoader?: ReactNode;
     onScrollToBottom?: () => void;
 
-    styles: {
+    styles?: {
       root: (theme: MantineTheme) => Record<string, string>,
       header: (theme: MantineTheme) => Record<string, string>,
     };

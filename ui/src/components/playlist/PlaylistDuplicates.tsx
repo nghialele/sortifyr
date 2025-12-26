@@ -89,8 +89,6 @@ export const PlaylistDuplicates = () => {
         sortStatus={sortStatus}
         onSortStatusChange={setSortStatus}
         fetching={isLoading}
-        animated={false}
-
       />
 
       <Confirm

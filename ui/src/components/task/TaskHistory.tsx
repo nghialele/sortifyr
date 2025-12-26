@@ -3,6 +3,9 @@ import { TaskHistoryFilter } from "@/lib/types/task";
 import { formatDate } from "@/lib/utils";
 import { Table } from "../molecules/Table";
 import { TaskResult } from "./TaskResult";
+import { ActionIcon } from "@mantine/core";
+import { LuTriangle } from "react-icons/lu";
+import { useState } from "react";
 
 type Props = {
   filter?: TaskHistoryFilter;
@@ -20,6 +23,8 @@ const formatDuration = (nanos: number) => {
 
 export const TaskHistory = ({ filter }: Props) => {
   const { history, isLoading, isFetchingNextPage, hasNextPage, fetchNextPage } = useTaskGetHistory(filter)
+
+  const [expandedIds, setExpandedIds] = useState<number[]>([])
 
   const handleBottom = () => {
     if (!hasNextPage) return
@@ -41,10 +46,29 @@ export const TaskHistory = ({ filter }: Props) => {
         },
         {
           accessor: "error",
-          title: "Message",
-          render: task => <p className="text-muted">{task.error ? task.error : task.message}</p>
+          title: "",
+          width: 40,
+          textAlign: 'right',
+          render: ({ id, error }) => error && (
+            <ActionIcon variant="transparent" color="black" size="xs">
+              <LuTriangle className={`fill-black w-2 ${expandedIds[0] === id && "rotate-180"}`} />
+            </ActionIcon>
+          )
         },
       ]}
+      rowExpansion={{
+        content: ({ record: { error } }) => (
+          <div className="m-4">
+            <p className="font-bold text-red-500">Error</p>
+            <p className="text-red-500">{error}</p>
+          </div>
+        ),
+        expandable: ({ record: { error } }) => Boolean(error),
+        expanded: {
+          recordIds: expandedIds,
+          onRecordIdsChange: setExpandedIds,
+        },
+      }}
       records={history}
       noRecordsText="No tasks run yet"
       fetching={isLoading}
