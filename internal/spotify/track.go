@@ -2,6 +2,7 @@ package spotify
 
 import (
 	"context"
+	"time"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/internal/spotify/api"
@@ -17,7 +18,17 @@ func (c *client) trackUpdate(ctx context.Context, user model.User) error {
 		return err
 	}
 
-	tracksSpotifyAPI, err := c.api.TrackGetAll(ctx, user, utils.SliceMap(tracksDB, func(t *model.Track) string { return t.SpotifyID }))
+	filtered := filterSpotify(filterSpotifyStruct[*model.Track]{
+		Items:     tracksDB,
+		Frequency: 24,
+		SpotifyID: func(t *model.Track) string { return t.SpotifyID },
+		UpdatedAt: func(t *model.Track) time.Time { return t.UpdatedAt },
+	})
+	if len(filtered) == 0 {
+		return nil
+	}
+
+	tracksSpotifyAPI, err := c.api.TrackGetAll(ctx, user, filtered)
 	if err != nil {
 		return nil
 	}
@@ -33,10 +44,12 @@ func (c *client) trackUpdate(ctx context.Context, user model.User) error {
 		tracksSpotify[i].ID = (*trackDB).ID
 
 		// Bring track up to date
-		if !(*trackDB).EqualEntry(tracksSpotify[i]) {
-			if err := c.track.Update(ctx, tracksSpotify[i]); err != nil {
-				return err
-			}
+		t := tracksSpotify[i]
+		if (*trackDB).EqualEntry(t) {
+			t = model.Track{ID: t.ID} // Do an empty update to refresh updated_at
+		}
+		if err := c.track.Update(ctx, t); err != nil {
+			return err
 		}
 
 		// Bring the track artists up to date

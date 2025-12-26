@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/topvennie/sortifyr/pkg/concurrent"
@@ -178,4 +179,30 @@ func (c *client) syncCover(ctx context.Context, s []syncCoverStruct) error {
 	}
 
 	return nil
+}
+
+type filterSpotifyStruct[T any] struct {
+	Items     []T                 // All items
+	Frequency int                 // The frequency to update in hours
+	SpotifyID func(t T) string    // Function to get the spotify id
+	UpdatedAt func(t T) time.Time // Function to get the last time it was updated
+}
+
+func filterSpotify[T any](f filterSpotifyStruct[T]) []string {
+	filtered := make([]string, 0)
+	cutOff := time.Now().Add(time.Duration(-1*f.Frequency) * time.Hour)
+
+	for i := range f.Items {
+		if f.SpotifyID(f.Items[i]) == "" {
+			continue
+		}
+
+		if f.UpdatedAt(f.Items[i]).After(cutOff) {
+			continue
+		}
+
+		filtered = append(filtered, f.SpotifyID(f.Items[i]))
+	}
+
+	return filtered
 }

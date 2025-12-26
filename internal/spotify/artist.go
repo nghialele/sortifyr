@@ -2,6 +2,7 @@ package spotify
 
 import (
 	"context"
+	"time"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/internal/spotify/api"
@@ -17,7 +18,17 @@ func (c *client) artistUpdate(ctx context.Context, user model.User) error {
 		return err
 	}
 
-	artistsSpotifyAPI, err := c.api.ArtistGetAll(ctx, user, utils.SliceMap(artistsDB, func(a *model.Artist) string { return a.SpotifyID }))
+	filtered := filterSpotify(filterSpotifyStruct[*model.Artist]{
+		Items:     artistsDB,
+		Frequency: 24,
+		SpotifyID: func(a *model.Artist) string { return a.SpotifyID },
+		UpdatedAt: func(a *model.Artist) time.Time { return a.UpdatedAt },
+	})
+	if len(filtered) == 0 {
+		return nil
+	}
+
+	artistsSpotifyAPI, err := c.api.ArtistGetAll(ctx, user, filtered)
 	if err != nil {
 		return err
 	}
@@ -33,10 +44,12 @@ func (c *client) artistUpdate(ctx context.Context, user model.User) error {
 		artistsSpotify[i].ID = (*artistDB).ID
 
 		// Bring the artist data up to date
-		if !(*artistDB).EqualEntry(artistsSpotify[i]) {
-			if err := c.artist.Update(ctx, artistsSpotify[i]); err != nil {
-				return err
-			}
+		a := artistsSpotify[i]
+		if (*artistDB).EqualEntry(a) {
+			a = model.Artist{ID: a.ID} // Do an empty update to refresh updated_at
+		}
+		if err := c.artist.Update(ctx, a); err != nil {
+			return err
 		}
 	}
 

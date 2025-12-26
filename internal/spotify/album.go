@@ -2,6 +2,7 @@ package spotify
 
 import (
 	"context"
+	"time"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/internal/spotify/api"
@@ -45,7 +46,17 @@ func (c *client) albumUpdate(ctx context.Context, user model.User) error {
 		return err
 	}
 
-	albumsSpotifyAPI, err := c.api.AlbumGetAll(ctx, user, utils.SliceMap(albumsDB, func(a *model.Album) string { return a.SpotifyID }))
+	filtered := filterSpotify(filterSpotifyStruct[*model.Album]{
+		Items:     albumsDB,
+		Frequency: 24,
+		SpotifyID: func(a *model.Album) string { return a.SpotifyID },
+		UpdatedAt: func(a *model.Album) time.Time { return a.UpdatedAt },
+	})
+	if len(filtered) == 0 {
+		return nil
+	}
+
+	albumsSpotifyAPI, err := c.api.AlbumGetAll(ctx, user, filtered)
 	if err != nil {
 		return err
 	}
@@ -61,10 +72,12 @@ func (c *client) albumUpdate(ctx context.Context, user model.User) error {
 		albumsSpotify[i].ID = (*albumDB).ID
 
 		// Bring the album data up to date
-		if !(*albumDB).EqualEntry(albumsSpotify[i]) {
-			if err := c.album.Update(ctx, albumsSpotify[i]); err != nil {
-				return err
-			}
+		a := albumsSpotify[i]
+		if (*albumDB).EqualEntry(a) {
+			a = model.Album{ID: a.ID} // Do an empty update to refresh updated_at
+		}
+		if err := c.album.Update(ctx, a); err != nil {
+			return err
 		}
 
 		// Bring the album artists up to date

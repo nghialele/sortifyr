@@ -2,6 +2,7 @@ package spotify
 
 import (
 	"context"
+	"time"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/internal/spotify/api"
@@ -45,6 +46,16 @@ func (c *client) showUpdate(ctx context.Context, user model.User) error {
 		return err
 	}
 
+	filtered := filterSpotify(filterSpotifyStruct[*model.Show]{
+		Items:     showsDB,
+		Frequency: 24,
+		SpotifyID: func(s *model.Show) string { return s.SpotifyID },
+		UpdatedAt: func(s *model.Show) time.Time { return s.UpdatedAt },
+	})
+	if len(filtered) == 0 {
+		return nil
+	}
+
 	showsSpotifyAPI, err := c.api.ShowGetAll(ctx, user, utils.SliceMap(showsDB, func(s *model.Show) string { return s.SpotifyID }))
 	if err != nil {
 		return err
@@ -61,10 +72,12 @@ func (c *client) showUpdate(ctx context.Context, user model.User) error {
 		showsSpotify[i].ID = (*showDB).ID
 
 		// Bring the show up to date
-		if !(*showDB).EqualEntry(showsSpotify[i]) {
-			if err := c.show.Update(ctx, showsSpotify[i]); err != nil {
-				return err
-			}
+		s := showsSpotify[i]
+		if (*showDB).EqualEntry(s) {
+			s = model.Show{ID: s.ID}
+		}
+		if err := c.show.Update(ctx, showsSpotify[i]); err != nil {
+			return err
 		}
 	}
 

@@ -24,7 +24,7 @@ func (c *client) taskRegister() error {
 	if err := task.Manager.Add(context.Background(), task.NewTask(
 		taskPlaylistUID,
 		"Playlist",
-		config.GetDefaultDuration("task.playlist_s", 6*60*60),
+		config.GetDefaultDuration("task.playlist_s", 60*60),
 		c.taskWrap(c.taskPlaylist),
 	)); err != nil {
 		return err
@@ -33,7 +33,7 @@ func (c *client) taskRegister() error {
 	if err := task.Manager.Add(context.Background(), task.NewTask(
 		taskAlbumUID,
 		"Album",
-		config.GetDefaultDuration("task.album_s", 6*60*60),
+		config.GetDefaultDuration("task.album_s", 60*60),
 		c.taskWrap(c.taskAlbum),
 	)); err != nil {
 		return err
@@ -51,7 +51,7 @@ func (c *client) taskRegister() error {
 	if err := task.Manager.Add(context.Background(), task.NewTask(
 		taskTrackUID,
 		"Track",
-		config.GetDefaultDuration("task.track_s", 60*60),
+		config.GetDefaultDuration("task.track_s", 5*60),
 		c.taskWrap(c.taskTrack),
 	)); err != nil {
 		return err
@@ -60,7 +60,7 @@ func (c *client) taskRegister() error {
 	if err := task.Manager.Add(context.Background(), task.NewTask(
 		taskArtistUID,
 		"Artist",
-		config.GetDefaultDuration("task.artist_s", 60*60),
+		config.GetDefaultDuration("task.artist_s", 5*60),
 		c.taskWrap(c.taskArtist),
 	)); err != nil {
 		return err
