@@ -51,6 +51,24 @@ func SliceUnique[T comparable](input []T) []T {
 	return result
 }
 
+// SliceUniqueFunc filters out all duplicate elements
+// The unique function should return an comparable that
+// is unique for unique elements
+func SliceUniqueFunc[T any, U comparable](input []T, unique func(t T) U) []T {
+	result := make([]T, 0, len(input))
+	seen := make(map[U]struct{}, len(input))
+
+	for _, item := range input {
+		u := unique(item)
+		if _, ok := seen[u]; !ok {
+			seen[u] = struct{}{}
+			result = append(result, item)
+		}
+	}
+
+	return result
+}
+
 // SliceReference converts a []T slice to []*T
 func SliceReference[T any](input []T) []*T {
 	result := make([]*T, len(input))

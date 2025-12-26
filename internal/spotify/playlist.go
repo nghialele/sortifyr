@@ -33,6 +33,7 @@ func (c *client) playlistSync(ctx context.Context, user model.User) error {
 
 		playlistSpotify := playlistsSpotifyAPI[i].ToModel()
 		playlistSpotify.OwnerID = ownerDB.ID
+		playlistSpotify.SnapshotID = "" // Make sure it gets fully updated
 
 		playlistsSpotify = append(playlistsSpotify, playlistSpotify)
 	}
@@ -154,7 +155,35 @@ func (c *client) playlistCoverSync(ctx context.Context, user model.User) error {
 	}))
 }
 
-func (c *client) PlaylistRemoveDuplicates(_ context.Context, _ model.User) error {
-	// TODO: Implement
+func (c *client) PlaylistRemoveDuplicates(ctx context.Context, user model.User) error {
+	// Spotify's API will remove every instance of a track in a playlist
+	// That's why we first need to make an API call to delete them
+	// Which deleted all instances
+	// And then add them back so that we dont lose them.
+
+	playlists, err := c.playlist.GetDuplicateTracksByUser(ctx, user.ID)
+	if err != nil {
+		return err
+	}
+
+	for i := range playlists {
+		if playlists[i].SnapshotID == "" {
+			continue
+		}
+
+		unique := utils.SliceUniqueFunc(playlists[i].Duplicates, func(t model.Track) string { return t.SpotifyID })
+		filtered := utils.SliceFilter(unique, func(t model.Track) bool { return t.SpotifyID != "" })
+
+		// Remove them all
+		if err := c.api.PlaylistDeleteTrackAll(ctx, user, playlists[i].SpotifyID, playlists[i].SnapshotID, filtered); err != nil {
+			return err
+		}
+
+		// Add them all back
+		if err := c.api.PlaylistPostTrackAll(ctx, user, playlists[i].SpotifyID, filtered); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

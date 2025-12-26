@@ -199,6 +199,7 @@ FROM playlist_tracks pt
 JOIN (
   SELECT playlist_id, track_id
   FROM playlist_tracks
+  WHERE deleted_at IS NULL
   GROUP BY playlist_id, track_id
   HAVING COUNT(*) > 1
 ) dup

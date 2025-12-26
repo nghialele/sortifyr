@@ -115,7 +115,7 @@ func (c *Client) PlaylistPostTrackAll(ctx context.Context, user model.User, spot
 
 		data, err := json.Marshal(payload)
 		if err != nil {
-			return fmt.Errorf("marshal tracks payload: %w", err)
+			return fmt.Errorf("marshal tracks add payload %+v | %w", payload, err)
 		}
 
 		body := bytes.NewReader(data)
@@ -130,14 +130,42 @@ func (c *Client) PlaylistPostTrackAll(ctx context.Context, user model.User, spot
 	return nil
 }
 
-type _ struct {
-	Tracks []struct {
-		URI string `json:"rui"`
-	} `json:"tracks"`
-	SnapshotID string `json:"snapshot_id"`
+type playlistTrackRemovePayload struct {
+	Tracks     []playlistTrackRemoveURIPayload `json:"tracks"`
+	SnapshotID string                          `json:"snapshot_id"`
 }
 
-func (c *Client) PlaylistDeleteTrack(_ context.Context, _ model.User, _ string, _ []model.Track) error {
-	// TODO: Implement
+type playlistTrackRemoveURIPayload struct {
+	URI string `json:"uri"`
+}
+
+func (c *Client) PlaylistDeleteTrackAll(ctx context.Context, user model.User, spotifyID, snapshotID string, tracks []model.Track) error {
+	current := 0
+	total := len(tracks)
+
+	for current < total {
+		end := min(current+100, total)
+
+		payload := playlistTrackRemovePayload{
+			Tracks: utils.SliceMap(tracks[current:end], func(t model.Track) playlistTrackRemoveURIPayload {
+				return playlistTrackRemoveURIPayload{URI: "spotify:track:" + t.SpotifyID}
+			}),
+			SnapshotID: snapshotID,
+		}
+
+		data, err := json.Marshal(payload)
+		if err != nil {
+			return fmt.Errorf("marshal tracks delete payload %+v | %w", payload, err)
+		}
+
+		body := bytes.NewReader(data)
+
+		if err := c.request(ctx, user, http.MethodDelete, fmt.Sprintf("playlists/%s/tracks", spotifyID), body, noResp); err != nil {
+			return err
+		}
+
+		current = end
+	}
+
 	return nil
 }

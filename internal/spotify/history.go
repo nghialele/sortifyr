@@ -48,7 +48,12 @@ func (c *client) historySync(ctx context.Context, user model.User) error {
 func (c *client) historyOneSync(ctx context.Context, user model.User, history api.History) error {
 	historyModel := history.ToModel(user)
 
-	track := model.Track{SpotifyID: history.Track.SpotifyID}
+	spotifyID := history.Track.SpotifyID
+	if history.Track.LinkedFrom.SpotifyID != "" {
+		spotifyID = history.Track.LinkedFrom.SpotifyID
+	}
+
+	track := model.Track{SpotifyID: spotifyID}
 	if err := c.historyTrackCheck(ctx, &track); err != nil {
 		return err
 	}

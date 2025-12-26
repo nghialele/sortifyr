@@ -168,11 +168,19 @@ type Track struct {
 	Name       string   `json:"name"`
 	Popularity int      `json:"popularity"`
 	Artists    []Artist `json:"artists"`
+	LinkedFrom struct {
+		SpotifyID string `json:"id"`
+	} `json:"linked_from"`
 }
 
 func (t *Track) ToModel() model.Track {
+	spotifyID := t.SpotifyID
+	if t.LinkedFrom.SpotifyID != "" {
+		spotifyID = t.LinkedFrom.SpotifyID
+	}
+
 	return model.Track{
-		SpotifyID:  t.SpotifyID,
+		SpotifyID:  spotifyID,
 		Name:       t.Name,
 		Popularity: t.Popularity,
 		Artists:    utils.SliceMap(t.Artists, func(a Artist) model.Artist { return a.ToModel() }),
