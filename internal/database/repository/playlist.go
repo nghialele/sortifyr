@@ -108,6 +108,7 @@ func (p *Playlist) Create(ctx context.Context, playlist *model.Playlist) error {
 		Collaborative: toBool(playlist.Collaborative),
 		CoverID:       toString(playlist.CoverID),
 		CoverUrl:      toString(playlist.CoverURL),
+		SnapshotID:    toString(playlist.SnapshotID),
 	})
 	if err != nil {
 		return fmt.Errorf("create playlist %+v | %w", *playlist, err)
@@ -157,6 +158,7 @@ func (p *Playlist) Update(ctx context.Context, playlist model.Playlist) error {
 		Collaborative: toBool(playlist.Collaborative),
 		CoverID:       toString(playlist.CoverID),
 		CoverUrl:      toString(playlist.CoverURL),
+		SnapshotID:    toString(playlist.SnapshotID),
 	}); err != nil {
 		return fmt.Errorf("update playlist %+v | %w", playlist, err)
 	}

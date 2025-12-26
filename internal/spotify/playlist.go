@@ -89,6 +89,12 @@ func (c *client) playlistUpdate(ctx context.Context, user model.User) error {
 			continue
 		}
 
+		if (*playlistDB).SnapshotID == playlistsSpotify[i].SnapshotID {
+			// Same snapshot id
+			// Meaning they are still equal
+			continue
+		}
+
 		playlistsSpotify[i].ID = (*playlistDB).ID
 
 		// bring the playlist up to date

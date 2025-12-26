@@ -109,6 +109,7 @@ type Playlist struct {
 	} `json:"tracks"`
 	Collaborative bool    `json:"collaborative"`
 	Images        []Image `json:"images"`
+	SnapshotID    string  `json:"snapshot_id"`
 }
 
 func (p *Playlist) ToModel() model.Playlist {
@@ -133,6 +134,7 @@ func (p *Playlist) ToModel() model.Playlist {
 			UID:         p.Owner.UID,
 			DisplayName: p.Owner.DisplayName,
 		},
+		SnapshotID: p.SnapshotID,
 	}
 }
 

@@ -132,6 +132,7 @@ type Playlist struct {
 	CoverUrl      pgtype.Text
 	OwnerID       pgtype.Int4
 	UpdatedAt     pgtype.Timestamptz
+	SnapshotID    pgtype.Text
 }
 
 type PlaylistTrack struct {

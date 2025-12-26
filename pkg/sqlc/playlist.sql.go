@@ -12,8 +12,8 @@ import (
 )
 
 const playlistCreate = `-- name: PlaylistCreate :one
-INSERT INTO playlists (spotify_id, owner_id, name, description, public, track_amount, collaborative, cover_id, cover_url)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO playlists (spotify_id, owner_id, name, description, public, track_amount, collaborative, cover_id, cover_url, snapshot_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING id
 `
 
@@ -27,6 +27,7 @@ type PlaylistCreateParams struct {
 	Collaborative pgtype.Bool
 	CoverID       pgtype.Text
 	CoverUrl      pgtype.Text
+	SnapshotID    pgtype.Text
 }
 
 func (q *Queries) PlaylistCreate(ctx context.Context, arg PlaylistCreateParams) (int32, error) {
@@ -40,6 +41,7 @@ func (q *Queries) PlaylistCreate(ctx context.Context, arg PlaylistCreateParams) 
 		arg.Collaborative,
 		arg.CoverID,
 		arg.CoverUrl,
+		arg.SnapshotID,
 	)
 	var id int32
 	err := row.Scan(&id)
@@ -47,7 +49,7 @@ func (q *Queries) PlaylistCreate(ctx context.Context, arg PlaylistCreateParams) 
 }
 
 const playlistGet = `-- name: PlaylistGet :one
-SELECT id, spotify_id, name, description, public, track_amount, collaborative, cover_id, cover_url, owner_id, updated_at
+SELECT id, spotify_id, name, description, public, track_amount, collaborative, cover_id, cover_url, owner_id, updated_at, snapshot_id
 FROM playlists
 WHERE id = $1
 `
@@ -67,12 +69,13 @@ func (q *Queries) PlaylistGet(ctx context.Context, id int32) (Playlist, error) {
 		&i.CoverUrl,
 		&i.OwnerID,
 		&i.UpdatedAt,
+		&i.SnapshotID,
 	)
 	return i, err
 }
 
 const playlistGetBySpotify = `-- name: PlaylistGetBySpotify :one
-SELECT id, spotify_id, name, description, public, track_amount, collaborative, cover_id, cover_url, owner_id, updated_at
+SELECT id, spotify_id, name, description, public, track_amount, collaborative, cover_id, cover_url, owner_id, updated_at, snapshot_id
 FROM playlists
 WHERE spotify_id = $1
 `
@@ -92,12 +95,13 @@ func (q *Queries) PlaylistGetBySpotify(ctx context.Context, spotifyID string) (P
 		&i.CoverUrl,
 		&i.OwnerID,
 		&i.UpdatedAt,
+		&i.SnapshotID,
 	)
 	return i, err
 }
 
 const playlistGetByUser = `-- name: PlaylistGetByUser :many
-SELECT p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at
+SELECT p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, p.snapshot_id
 FROM playlists p
 LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
 WHERE pu.user_id = $1 AND pu.deleted_at IS NULL
@@ -125,6 +129,7 @@ func (q *Queries) PlaylistGetByUser(ctx context.Context, userID int32) ([]Playli
 			&i.CoverUrl,
 			&i.OwnerID,
 			&i.UpdatedAt,
+			&i.SnapshotID,
 		); err != nil {
 			return nil, err
 		}
@@ -137,7 +142,7 @@ func (q *Queries) PlaylistGetByUser(ctx context.Context, userID int32) ([]Playli
 }
 
 const playlistGetByUserWithOwner = `-- name: PlaylistGetByUserWithOwner :many
-SELECT p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, u.id, u.uid, u.name, u.display_name, u.email
+SELECT p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, p.snapshot_id, u.id, u.uid, u.name, u.display_name, u.email
 FROM playlists p
 LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
 LEFT JOIN users u ON u.id = p.owner_id
@@ -171,6 +176,7 @@ func (q *Queries) PlaylistGetByUserWithOwner(ctx context.Context, userID int32) 
 			&i.Playlist.CoverUrl,
 			&i.Playlist.OwnerID,
 			&i.Playlist.UpdatedAt,
+			&i.Playlist.SnapshotID,
 			&i.User.ID,
 			&i.User.Uid,
 			&i.User.Name,
@@ -188,7 +194,7 @@ func (q *Queries) PlaylistGetByUserWithOwner(ctx context.Context, userID int32) 
 }
 
 const playlistGetDuplicateTracksByUser = `-- name: PlaylistGetDuplicateTracksByUser :many
-SELECT p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, t.id, t.spotify_id, t.name, t.popularity, t.updated_at, u.id, u.uid, u.name, u.display_name, u.email
+SELECT p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, p.snapshot_id, t.id, t.spotify_id, t.name, t.popularity, t.updated_at, u.id, u.uid, u.name, u.display_name, u.email
 FROM playlist_tracks pt
 JOIN (
   SELECT playlist_id, track_id
@@ -233,6 +239,7 @@ func (q *Queries) PlaylistGetDuplicateTracksByUser(ctx context.Context, userID i
 			&i.Playlist.CoverUrl,
 			&i.Playlist.OwnerID,
 			&i.Playlist.UpdatedAt,
+			&i.Playlist.SnapshotID,
 			&i.Track.ID,
 			&i.Track.SpotifyID,
 			&i.Track.Name,
@@ -265,6 +272,7 @@ SET
   collaborative = coalesce($7, collaborative),
   cover_id = coalesce($8, cover_id),
   cover_url = coalesce($9, cover_url),
+  snapshot_id = coalesce($10, snapshot_id),
   updated_at = NOW()
 WHERE spotify_id = $1
 `
@@ -279,6 +287,7 @@ type PlaylistUpdateBySpotifyParams struct {
 	Collaborative pgtype.Bool
 	CoverID       pgtype.Text
 	CoverUrl      pgtype.Text
+	SnapshotID    pgtype.Text
 }
 
 func (q *Queries) PlaylistUpdateBySpotify(ctx context.Context, arg PlaylistUpdateBySpotifyParams) error {
@@ -292,6 +301,7 @@ func (q *Queries) PlaylistUpdateBySpotify(ctx context.Context, arg PlaylistUpdat
 		arg.Collaborative,
 		arg.CoverID,
 		arg.CoverUrl,
+		arg.SnapshotID,
 	)
 	return err
 }

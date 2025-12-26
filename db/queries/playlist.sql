@@ -43,8 +43,8 @@ WHERE pu.user_id = $1 AND p.owner_id IS NOT NULL AND pu.deleted_at IS NULL
 ORDER BY pt.playlist_id, pt.track_id, pt.id;
 
 -- name: PlaylistCreate :one
-INSERT INTO playlists (spotify_id, owner_id, name, description, public, track_amount, collaborative, cover_id, cover_url)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO playlists (spotify_id, owner_id, name, description, public, track_amount, collaborative, cover_id, cover_url, snapshot_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING id;
 
 -- name: PlaylistUpdateBySpotify :exec
@@ -58,6 +58,7 @@ SET
   collaborative = coalesce(sqlc.narg('collaborative'), collaborative),
   cover_id = coalesce(sqlc.narg('cover_id'), cover_id),
   cover_url = coalesce(sqlc.narg('cover_url'), cover_url),
+  snapshot_id = coalesce(sqlc.narg('snapshot_id'), snapshot_id),
   updated_at = NOW()
 WHERE spotify_id = $1;
 

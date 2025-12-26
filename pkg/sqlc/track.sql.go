@@ -114,7 +114,7 @@ func (q *Queries) TrackGetBySpotify(ctx context.Context, spotifyID string) (Trac
 }
 
 const trackGetCreatedFilteredPopulated = `-- name: TrackGetCreatedFilteredPopulated :many
-SELECT t.id, t.spotify_id, t.name, t.popularity, t.updated_at, pt.id, pt.playlist_id, pt.track_id, pt.deleted_at, pt.created_at, p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, u.id, u.uid, u.name, u.display_name, u.email
+SELECT t.id, t.spotify_id, t.name, t.popularity, t.updated_at, pt.id, pt.playlist_id, pt.track_id, pt.deleted_at, pt.created_at, p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, p.snapshot_id, u.id, u.uid, u.name, u.display_name, u.email
 FROM tracks t
 LEFT JOIN playlist_tracks pt ON pt.track_id = t.id
 LEFT JOIN playlist_users pu ON pu.playlist_id = pt.playlist_id
@@ -180,6 +180,7 @@ func (q *Queries) TrackGetCreatedFilteredPopulated(ctx context.Context, arg Trac
 			&i.Playlist.CoverUrl,
 			&i.Playlist.OwnerID,
 			&i.Playlist.UpdatedAt,
+			&i.Playlist.SnapshotID,
 			&i.User.ID,
 			&i.User.Uid,
 			&i.User.Name,
@@ -197,7 +198,7 @@ func (q *Queries) TrackGetCreatedFilteredPopulated(ctx context.Context, arg Trac
 }
 
 const trackGetDeletedFilteredPopulated = `-- name: TrackGetDeletedFilteredPopulated :many
-SELECT t.id, t.spotify_id, t.name, t.popularity, t.updated_at, pt.id, pt.playlist_id, pt.track_id, pt.deleted_at, pt.created_at, p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, u.id, u.uid, u.name, u.display_name, u.email
+SELECT t.id, t.spotify_id, t.name, t.popularity, t.updated_at, pt.id, pt.playlist_id, pt.track_id, pt.deleted_at, pt.created_at, p.id, p.spotify_id, p.name, p.description, p.public, p.track_amount, p.collaborative, p.cover_id, p.cover_url, p.owner_id, p.updated_at, p.snapshot_id, u.id, u.uid, u.name, u.display_name, u.email
 FROM tracks t
 LEFT JOIN playlist_tracks pt ON pt.track_id = t.id
 LEFT JOIN playlist_users pu ON pu.playlist_id = pt.playlist_id
@@ -263,6 +264,7 @@ func (q *Queries) TrackGetDeletedFilteredPopulated(ctx context.Context, arg Trac
 			&i.Playlist.CoverUrl,
 			&i.Playlist.OwnerID,
 			&i.Playlist.UpdatedAt,
+			&i.Playlist.SnapshotID,
 			&i.User.ID,
 			&i.User.Uid,
 			&i.User.Name,

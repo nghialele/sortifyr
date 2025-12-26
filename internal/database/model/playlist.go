@@ -17,6 +17,7 @@ type Playlist struct {
 	Collaborative bool
 	CoverID       string
 	CoverURL      string
+	SnapshotID    string
 	UpdatedAt     time.Time
 
 	// Non db fields
@@ -36,6 +37,7 @@ func PlaylistModel(p sqlc.Playlist) *Playlist {
 		Collaborative: fromBool(p.Collaborative),
 		CoverID:       fromString(p.CoverID),
 		CoverURL:      fromString(p.CoverUrl),
+		SnapshotID:    fromString(p.SnapshotID),
 		UpdatedAt:     fromTime(p.UpdatedAt),
 	}
 }
@@ -52,7 +54,7 @@ func (p *Playlist) Equal(p2 Playlist) bool {
 }
 
 func (p *Playlist) EqualEntry(p2 Playlist) bool {
-	return p.OwnerID == p2.OwnerID && p.Name == p2.Name && p.Description == p2.Description && p.Public == p2.Public && p.TrackAmount == p2.TrackAmount && p.Collaborative == p2.Collaborative && p.CoverURL == p2.CoverURL
+	return p.OwnerID == p2.OwnerID && p.Name == p2.Name && p.Description == p2.Description && p.Public == p2.Public && p.TrackAmount == p2.TrackAmount && p.Collaborative == p2.Collaborative && p.CoverURL == p2.CoverURL && p.SnapshotID == p2.SnapshotID
 }
 
 type PlaylistTrack struct {
