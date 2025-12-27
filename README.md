@@ -155,6 +155,13 @@ A web application to help organize and automate your Spotify playlists.
   And all that it'll do is add some unwanted tracks to a playlist.
 </details>
 
+<details>
+  <summary>Why are changes to my playlists not immediately reflected in Sortifyr?</summary>
+
+  Changes made to playlists in Spotify are not immediately reflected in the web API.
+  It can take up to 10 minutes before the API returns the updated data.
+</details>
+
 ## Spotify App setup
 
 > [!IMPORTANT]
