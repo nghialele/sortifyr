@@ -9,7 +9,10 @@ LIMIT 1;
 SELECT sqlc.embed(h), sqlc.embed(t)
 FROM history h
 LEFT JOIN tracks t ON t.id = h.track_id
-WHERE h.user_id = $1::int
+WHERE 
+  h.user_id = $1::int AND
+  (h.played_at >= $4::timestamptz OR NOT @filter_start) AND 
+  (h.played_at <= $5::timestamptz OR NOT @filter_end)
 ORDER BY h.played_at DESC
 LIMIT $2 OFFSET $3;
  

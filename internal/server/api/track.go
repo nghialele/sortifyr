@@ -1,6 +1,8 @@
 package api
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/topvennie/sortifyr/internal/server/dto"
 	"github.com/topvennie/sortifyr/internal/server/service"
@@ -35,6 +37,26 @@ func (r *Track) getHistory(c *fiber.Ctx) error {
 		return fiber.ErrUnauthorized
 	}
 
+	var err error
+
+	startRaw := c.Query("start")
+	start := time.Time{}
+	if startRaw != "" {
+		start, err = time.Parse("2006-01-02T15:04:05.000Z", startRaw)
+		if err != nil {
+			return fiber.ErrBadRequest
+		}
+	}
+
+	endRaw := c.Query("end")
+	end := time.Time{}
+	if endRaw != "" {
+		end, err = time.Parse("2006-01-02T15:04:05.000Z", endRaw)
+		if err != nil {
+			return fiber.ErrBadRequest
+		}
+	}
+
 	limit := c.QueryInt("limit", 10)
 	page := c.QueryInt("page", 1)
 	if limit < 1 || page < 1 {
@@ -45,6 +67,8 @@ func (r *Track) getHistory(c *fiber.Ctx) error {
 		UserID: userID,
 		Limit:  limit,
 		Offset: (page - 1) * limit,
+		Start:  start,
+		End:    end,
 	})
 	if err != nil {
 		return err

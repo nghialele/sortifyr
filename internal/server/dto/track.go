@@ -98,6 +98,8 @@ type HistoryFilter struct {
 	UserID int
 	Limit  int
 	Offset int
+	Start  time.Time
+	End    time.Time
 }
 
 func (h HistoryFilter) ToModel() *model.HistoryFilter {
@@ -105,5 +107,7 @@ func (h HistoryFilter) ToModel() *model.HistoryFilter {
 		UserID: h.UserID,
 		Limit:  h.Limit,
 		Offset: h.Offset,
+		Start:  h.Start,
+		End:    h.End,
 	}
 }

@@ -80,3 +80,8 @@ export const convertTrackDuplicate = (t: API.TrackDuplicate): TrackDuplicate => 
 export interface TrackFilter {
   playlistId?: string;
 }
+
+export interface TrackHistoryFilter {
+  start?: Date;
+  end?: Date;
+}

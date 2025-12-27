@@ -1,19 +1,26 @@
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { STALE_TIME } from "../types/staletime"
-import { convertTrackHistories, convertTracksAdded, convertTracksDeleted, TrackFilter } from "../types/track"
+import { convertTrackHistories, convertTracksAdded, convertTracksDeleted, TrackFilter, TrackHistoryFilter } from "../types/track"
 import { apiGet } from "./query"
 
 const ENDPOINT = "track"
 const PAGE_LIMIT = 100
 
-export const useTrackGetHistory = () => {
+export const useTrackGetHistory = (filter?: TrackHistoryFilter) => {
   const { data, isLoading, fetchNextPage, isFetchingNextPage, hasNextPage, error, refetch, isFetching } = useInfiniteQuery({
-    queryKey: ["track", "history"],
+    queryKey: ["track", "history", JSON.stringify(filter)],
     queryFn: async ({ pageParam = 1 }) => {
       const queryParams = new URLSearchParams({
         page: pageParam.toString(),
         limit: PAGE_LIMIT.toString(),
       })
+
+      if (filter?.start !== undefined) {
+        queryParams.append("start", filter.start.toISOString())
+      }
+      if (filter?.end !== undefined) {
+        queryParams.append("end", filter.end.toISOString())
+      }
 
       const url = `${ENDPOINT}/history?${queryParams.toString()}`
       return (await apiGet(url, convertTrackHistories)).data

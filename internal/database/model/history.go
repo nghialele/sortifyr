@@ -54,4 +54,6 @@ type HistoryFilter struct {
 	UserID int
 	Limit  int
 	Offset int
+	Start  time.Time
+	End    time.Time
 }

@@ -70,15 +70,22 @@ const historyGetPopulatedFiltered = `-- name: HistoryGetPopulatedFiltered :many
 SELECT h.id, h.user_id, h.track_id, h.played_at, h.album_id, h.artist_id, h.playlist_id, h.show_id, t.id, t.spotify_id, t.name, t.popularity, t.updated_at
 FROM history h
 LEFT JOIN tracks t ON t.id = h.track_id
-WHERE h.user_id = $1::int
+WHERE 
+  h.user_id = $1::int AND
+  (h.played_at >= $4::timestamptz OR NOT $6) AND 
+  (h.played_at <= $5::timestamptz OR NOT $7)
 ORDER BY h.played_at DESC
 LIMIT $2 OFFSET $3
 `
 
 type HistoryGetPopulatedFilteredParams struct {
-	Column1 int32
-	Limit   int32
-	Offset  int32
+	Column1     int32
+	Limit       int32
+	Offset      int32
+	Column4     pgtype.Timestamptz
+	Column5     pgtype.Timestamptz
+	FilterStart interface{}
+	FilterEnd   interface{}
 }
 
 type HistoryGetPopulatedFilteredRow struct {
@@ -87,7 +94,15 @@ type HistoryGetPopulatedFilteredRow struct {
 }
 
 func (q *Queries) HistoryGetPopulatedFiltered(ctx context.Context, arg HistoryGetPopulatedFilteredParams) ([]HistoryGetPopulatedFilteredRow, error) {
-	rows, err := q.db.Query(ctx, historyGetPopulatedFiltered, arg.Column1, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, historyGetPopulatedFiltered,
+		arg.Column1,
+		arg.Limit,
+		arg.Offset,
+		arg.Column4,
+		arg.Column5,
+		arg.FilterStart,
+		arg.FilterEnd,
+	)
 	if err != nil {
 		return nil, err
 	}

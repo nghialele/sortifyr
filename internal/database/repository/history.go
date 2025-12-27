@@ -35,9 +35,13 @@ func (h *History) GetLatest(ctx context.Context, userID int) (*model.History, er
 
 func (h *History) GetPopulatedFiltered(ctx context.Context, filter model.HistoryFilter) ([]*model.History, error) {
 	history, err := h.repo.queries(ctx).HistoryGetPopulatedFiltered(ctx, sqlc.HistoryGetPopulatedFilteredParams{
-		Column1: int32(filter.UserID),
-		Limit:   int32(filter.Limit),
-		Offset:  int32(filter.Offset),
+		Column1:     int32(filter.UserID),
+		Limit:       int32(filter.Limit),
+		Offset:      int32(filter.Offset),
+		Column4:     toTime(filter.Start),
+		FilterStart: !filter.Start.IsZero(),
+		Column5:     toTime(filter.End),
+		FilterEnd:   !filter.End.IsZero(),
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
