@@ -18,9 +18,9 @@ A web application to help organize and automate your Spotify playlists.
 
   ![Playlist duplicate tracks](./screenshots/playlist_duplicate.png)
 
-  > [!NOTE]
-  > Due to Spotify API limitations this will first delete every instance
-  > of the duplicate track in the playlist and afterwards add it back.
+> [!NOTE]
+> Due to Spotify API limitations this will first delete every instance
+> of the duplicate track in the playlist and afterwards add it back.
 </details>
 
 <details>
