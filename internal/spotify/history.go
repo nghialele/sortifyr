@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
-	"github.com/topvennie/sortifyr/internal/spotify/api"
 )
 
 func (c *client) historySync(ctx context.Context, user model.User) error {
@@ -20,6 +19,9 @@ func (c *client) historySync(ctx context.Context, user model.User) error {
 	current, err := c.api.PlayerGetCurrent(ctx, user)
 	if err != nil {
 		return err
+	}
+	if !current.IsPlaying {
+		return nil
 	}
 
 	now := time.Now()
@@ -38,57 +40,47 @@ func (c *client) historySync(ctx context.Context, user model.User) error {
 		return nil
 	}
 
-	return c.historyOneSync(ctx, user, api.History{
-		Track:    current.Track,
-		PlayedAt: now.Add(time.Duration(-current.ProgressMs) * time.Millisecond),
-		Context:  current.Context,
-	})
-}
-
-func (c *client) historyOneSync(ctx context.Context, user model.User, history api.History) error {
-	historyModel := history.ToModel(user)
-
-	spotifyID := history.Track.SpotifyID
-	if history.Track.LinkedFrom.SpotifyID != "" {
-		spotifyID = history.Track.LinkedFrom.SpotifyID
-	}
-
-	track := model.Track{SpotifyID: spotifyID}
+	track := current.Track.ToModel()
 	if err := c.historyTrackCheck(ctx, &track); err != nil {
 		return err
 	}
-	historyModel.TrackID = track.ID
 
-	contextSpotifyID := uriToID(history.Context.URI)
+	history := model.History{
+		UserID:   user.ID,
+		PlayedAt: now.Add(time.Duration(-current.ProgressMs) * time.Millisecond),
+		TrackID:  track.ID,
+	}
 
-	switch history.Context.Type {
+	contextSpotifyID := uriToID(current.Context.URI)
+
+	switch current.Context.Type {
 	case "album":
 		album := model.Album{SpotifyID: contextSpotifyID}
 		if err := c.historyAlbumCheck(ctx, &album); err != nil {
 			return err
 		}
-		historyModel.AlbumID = album.ID
+		history.AlbumID = album.ID
 	case "artist":
 		artist := model.Artist{SpotifyID: contextSpotifyID}
 		if err := c.historyArtistCheck(ctx, &artist); err != nil {
 			return err
 		}
-		historyModel.ArtistID = artist.ID
+		history.ArtistID = artist.ID
 	case "playlist":
 		playlist := model.Playlist{SpotifyID: contextSpotifyID}
 		if err := c.historyPlaylistCheck(ctx, &playlist); err != nil {
 			return err
 		}
-		historyModel.PlaylistID = playlist.ID
+		history.PlaylistID = playlist.ID
 	case "show":
 		show := model.Show{SpotifyID: contextSpotifyID}
 		if err := c.historyShowCheck(ctx, &show); err != nil {
 			return err
 		}
-		historyModel.ShowID = show.ID
+		history.ShowID = show.ID
 	}
 
-	if err := c.history.Create(ctx, &historyModel); err != nil {
+	if err := c.history.Create(ctx, &history); err != nil {
 		return err
 	}
 

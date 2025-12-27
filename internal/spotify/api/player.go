@@ -2,6 +2,8 @@ package api
 
 import (
 	"context"
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
@@ -27,6 +29,9 @@ type playerCurrentResponse struct {
 func (c *Client) PlayerGetCurrent(ctx context.Context, user model.User) (Current, error) {
 	var resp playerCurrentResponse
 	if err := c.request(ctx, user, http.MethodGet, "me/player/currently-playing", http.NoBody, &resp); err != nil {
+		if errors.Is(err, io.EOF) {
+			return Current{}, nil
+		}
 		return Current{}, err
 	}
 
