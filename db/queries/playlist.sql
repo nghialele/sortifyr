@@ -41,7 +41,17 @@ LEFT JOIN tracks t ON t.id = pt.track_id
 LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
 LEFT JOIN users u ON u.id = p.owner_id
 WHERE pu.user_id = $1 AND p.owner_id IS NOT NULL AND pu.deleted_at IS NULL
-ORDER BY pt.playlist_id, pt.track_id, pt.id;
+ORDER BY p.id, t.id, pt.id;
+
+-- name: PlaylistGetUnplayableTracksByUser :many
+SELECT sqlc.embed(p), sqlc.embed(t), sqlc.embed(u)
+FROM playlist_tracks pt
+LEFT JOIN playlists p ON p.id = pt.playlist_id
+LEFT JOIN tracks t ON t.id = pt.track_id
+LEFT JOIN playlist_users pu ON pu.playlist_id = p.id
+LEFT JOIN users u ON u.id = p.owner_id
+WHERE pu.user_id = $1 AND p.owner_id IS NOT NULL AND pu.deleted_at IS NULL AND (t.spotify_id IS NULL OR t.spotify_id = '')
+ORDER BY p.id, t.id, pt.id;
 
 -- name: PlaylistCreate :one
 INSERT INTO playlists (spotify_id, owner_id, name, description, public, track_amount, collaborative, cover_id, cover_url, snapshot_id)

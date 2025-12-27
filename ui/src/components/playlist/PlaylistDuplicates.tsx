@@ -38,7 +38,7 @@ export const PlaylistDuplicates = () => {
       <Group justify="space-between">
         <SectionTitle
           title="Playlist duplicates"
-          description={`Playlists with duplicate tracks\nClick on a row to see the duplicate tracks`}
+          description={`Playlists with duplicate tracks.\nClick on a row to see the duplicate tracks.`}
         />
         <Button onClick={open} radius="lg" color="secondary.1" c="black">
           Remove duplicates
@@ -85,7 +85,7 @@ export const PlaylistDuplicates = () => {
           )
         }}
         records={records}
-        noRecordsText="No playlist with duplicates"
+        noRecordsText="No playlists with duplicate tracks"
         sortStatus={sortStatus}
         onSortStatusChange={setSortStatus}
         fetching={isLoading}

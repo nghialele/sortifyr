@@ -25,6 +25,10 @@ export namespace API {
     duplicates: TrackDuplicate[],
   }
 
+  export interface PlaylistUnplayable extends Playlist {
+    unplayables: Track[],
+  }
+
   export interface Directory extends Base {
     name: string;
     children?: Directory[];

@@ -2,11 +2,12 @@ import { Page, PageTitle, Section } from "@/components/atoms/Page"
 import { Segment } from "@/components/molecules/Segment"
 import { PlaylistDuplicates } from "@/components/playlist/PlaylistDuplicates"
 import { PlaylistOverview } from "@/components/playlist/PlaylistOverview"
+import { PlaylistUnplayables } from "@/components/playlist/PlaylistUnplayable"
 import { Center, Group } from "@mantine/core"
 import { ReactNode, useMemo, useState } from "react"
-import { LuSquareStack, LuTextSearch } from "react-icons/lu"
+import { LuListX, LuSquareStack, LuTextSearch } from "react-icons/lu"
 
-type ViewOption = "overview" | "duplicates"
+type ViewOption = "overview" | "duplicates" | "unplayables"
 type View = { value: ViewOption, label: string, icon: ReactNode, }
 
 const views: View[] = [
@@ -20,12 +21,18 @@ const views: View[] = [
     label: "Duplicates",
     icon: <LuSquareStack />,
   },
+  {
+    value: "unplayables",
+    label: "Unplayable",
+    icon: <LuListX />,
+  },
 ]
 
 const renderView = (view: ViewOption) => {
   switch (view) {
     case "overview": return <PlaylistOverview />
     case "duplicates": return <PlaylistDuplicates />
+    case "unplayables": return <PlaylistUnplayables />
   }
 }
 

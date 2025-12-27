@@ -5,7 +5,7 @@ import { TrackDeleted } from "@/components/track/TrackDeleted";
 import { TrackHistory } from "@/components/track/TrackHistory";
 import { Center, Group } from "@mantine/core";
 import { ReactNode, useMemo, useState } from "react";
-import { LuSquareStack, LuTextSearch } from "react-icons/lu";
+import { LuListMinus, LuListPlus, LuListRestart } from "react-icons/lu";
 
 type ViewOption = "history" | "added" | "deleted"
 type View = { value: ViewOption, label: string, icon: ReactNode, }
@@ -14,17 +14,17 @@ const views: View[] = [
   {
     value: "history",
     label: "History",
-    icon: <LuTextSearch />,
+    icon: <LuListRestart />,
   },
   {
     value: "added",
     label: "Added",
-    icon: <LuSquareStack />,
+    icon: <LuListPlus />,
   },
   {
     value: "deleted",
     label: "Deleted",
-    icon: <LuSquareStack />,
+    icon: <LuListMinus />,
   },
 ]
 

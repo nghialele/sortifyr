@@ -21,8 +21,9 @@ type Playlist struct {
 	UpdatedAt     time.Time
 
 	// Non db fields
-	Owner      User
-	Duplicates []Track
+	Owner       User
+	Duplicates  []Track
+	Unplayables []Track
 }
 
 func PlaylistModel(p sqlc.Playlist) *Playlist {

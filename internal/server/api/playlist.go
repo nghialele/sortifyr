@@ -27,6 +27,7 @@ func (p *Playlist) routes() {
 	p.router.Get("/cover/:id", p.getCover)
 	p.router.Get("/duplicate", p.getDuplicates)
 	p.router.Post("/duplicate", p.removeDuplicates)
+	p.router.Get("/unplayable", p.getUnplayables)
 }
 
 func (p *Playlist) getAll(c *fiber.Ctx) error {
@@ -66,6 +67,20 @@ func (p *Playlist) getDuplicates(c *fiber.Ctx) error {
 	}
 
 	playlists, err := p.playlist.GetDuplicates(c.Context(), userID)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(playlists)
+}
+
+func (p *Playlist) getUnplayables(c *fiber.Ctx) error {
+	userID, ok := c.Locals("userID").(int)
+	if !ok {
+		return fiber.ErrUnauthorized
+	}
+
+	playlists, err := p.playlist.GetUnplayables(c.Context(), userID)
 	if err != nil {
 		return err
 	}

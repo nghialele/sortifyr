@@ -72,3 +72,15 @@ func PlaylistDuplicateDTO(playlist *model.Playlist, user *model.User, duplicates
 		Duplicates: utils.SliceMap(utils.MapValues(duplicateMap), func(t trackAmount) TrackDuplicate { return TrackDuplicateDTO(&t.track, t.amount) }),
 	}
 }
+
+type PlaylistUnplayable struct {
+	Playlist
+	Unplayables []Track `json:"unplayables"`
+}
+
+func PlaylistUnplayableDTO(playlist *model.Playlist, user *model.User, unplayables []model.Track) PlaylistUnplayable {
+	return PlaylistUnplayable{
+		Playlist:    PlaylistDTO(playlist, user),
+		Unplayables: utils.SliceMap(unplayables, func(t model.Track) Track { return TrackDTO(&t) }),
+	}
+}

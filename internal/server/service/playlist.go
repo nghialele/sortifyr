@@ -85,6 +85,18 @@ func (p *Playlist) GetDuplicates(ctx context.Context, userID int) ([]dto.Playlis
 	}), nil
 }
 
+func (p *Playlist) GetUnplayables(ctx context.Context, userID int) ([]dto.PlaylistUnplayable, error) {
+	playlists, err := p.playlist.GetUnplayableTracksByUser(ctx, userID)
+	if err != nil {
+		zap.S().Error(err)
+		return nil, fiber.ErrInternalServerError
+	}
+
+	return utils.SliceMap(playlists, func(p *model.Playlist) dto.PlaylistUnplayable {
+		return dto.PlaylistUnplayableDTO(p, &p.Owner, p.Unplayables)
+	}), nil
+}
+
 func (p *Playlist) RemoveDuplicates(ctx context.Context, userID int) error {
 	user, err := p.user.GetByID(ctx, userID)
 	if err != nil {

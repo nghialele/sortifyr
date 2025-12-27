@@ -1,7 +1,7 @@
 import z from "zod";
 import { API } from "./api";
 import { JSONBody } from "./general";
-import { convertTrackDuplicate, TrackDuplicate } from "./track";
+import { convertTrack, convertTrackDuplicate, Track, TrackDuplicate } from "./track";
 import { convertUser, User } from "./user";
 
 export interface Playlist {
@@ -18,6 +18,10 @@ export interface Playlist {
 
 export interface PlaylistDuplicate extends Playlist {
   duplicates: TrackDuplicate[];
+}
+
+export interface PlaylistUnplayable extends Playlist {
+  unplayables: Track[];
 }
 
 export const convertPlaylist = (playlist: API.Playlist): Playlist => {
@@ -47,6 +51,17 @@ export const convertPlaylistDuplicate = (p: API.PlaylistDuplicate): PlaylistDupl
 
 export const convertPlaylistDuplicates = (p: API.PlaylistDuplicate[]): PlaylistDuplicate[] => {
   return p.map(convertPlaylistDuplicate)
+}
+
+export const convertPlaylistUnplayable = (p: API.PlaylistUnplayable): PlaylistUnplayable => {
+  return {
+    ...convertPlaylist(p),
+    unplayables: p.unplayables.map(convertTrack),
+  }
+}
+
+export const convertPlaylistUnplayables = (p: API.PlaylistUnplayable[]): PlaylistUnplayable[] => {
+  return p.map(convertPlaylistUnplayable)
 }
 
 export const convertPlaylistsSchema = (playlists: Playlist[]): PlaylistSchema[] => {
