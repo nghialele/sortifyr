@@ -1,19 +1,52 @@
-import { Page, PageTitle, Section, SectionTitle } from "@/components/atoms/Page";
-import { Select } from "@/components/molecules/Select";
-import { TrackAddedTable } from "@/components/track/TrackAddedTable";
-import { TrackDeletedTable } from "@/components/track/TrackDeletedTable";
-import { TrackHistoryTable } from "@/components/track/TrackHistoryTable";
-import { usePlaylistGetAll } from "@/lib/api/playlist";
-import { TrackFilter } from "@/lib/types/track";
-import { scrollTo } from "@/lib/utils";
-import { Button, Group } from "@mantine/core";
-import { useState } from "react";
+import { Page, PageTitle, Section } from "@/components/atoms/Page";
+import { Segment } from "@/components/molecules/Segment";
+import { TrackAdded } from "@/components/track/TrackAdded";
+import { TrackDeleted } from "@/components/track/TrackDeleted";
+import { TrackHistory } from "@/components/track/TrackHistory";
+import { Center, Group } from "@mantine/core";
+import { ReactNode, useMemo, useState } from "react";
+import { LuSquareStack, LuTextSearch } from "react-icons/lu";
+
+type ViewOption = "history" | "added" | "deleted"
+type View = { value: ViewOption, label: string, icon: ReactNode, }
+
+const views: View[] = [
+  {
+    value: "history",
+    label: "History",
+    icon: <LuTextSearch />,
+  },
+  {
+    value: "added",
+    label: "Added",
+    icon: <LuSquareStack />,
+  },
+  {
+    value: "deleted",
+    label: "Deleted",
+    icon: <LuSquareStack />,
+  },
+]
+
+const renderView = (view: ViewOption) => {
+  switch (view) {
+    case "history": return <TrackHistory />
+    case "added": return <TrackAdded />
+    case "deleted": return <TrackDeleted />
+  }
+}
+
+const storageKey = "sortifyr-track-view"
 
 export const Tracks = () => {
-  const { data: playlists, isLoading: isLoadingPlaylists } = usePlaylistGetAll()
+  const [view, setView] = useState<ViewOption>(localStorage.getItem(storageKey) as ViewOption ?? "history")
 
-  const [filterCreated, setFilterCreated] = useState<TrackFilter>({})
-  const [filterDeleted, setFilterDeleted] = useState<TrackFilter>({})
+  const handleSegment = (view: ViewOption) => {
+    localStorage.setItem(storageKey, view)
+    setView(view)
+  }
+
+  const renderedView = useMemo(() => renderView(view), [view])
 
   return (
     <Page>
@@ -22,56 +55,25 @@ export const Tracks = () => {
           title="Tracks"
           description="All track related tools."
         />
-        <Group>
-          <Button onClick={() => scrollTo("track-played")} radius="lg">
-            Played
-          </Button>
-          <Button onClick={() => scrollTo("track-added")} radius="lg">
-            Added
-          </Button>
-          <Button onClick={() => scrollTo("track-deleted")} radius="lg">
-            Removed
-          </Button>
-        </Group>
+        <Segment
+          data={views.map(v => ({
+            value: v.value,
+            label: (
+              <Center style={{ gap: 4 }}>
+                {v.icon}
+                <p>{v.label}</p>
+              </Center>
+            )
+          }))}
+          value={view}
+          onChange={e => handleSegment(e as ViewOption)}
+        />
       </Group>
 
-      <Section id="track-played" className="min-h-full">
-        <SectionTitle
-          title="Recently Played"
-          description="An overview of recently played tracks."
-        />
-        <TrackHistoryTable />
+      <Section>
+        {renderedView}
       </Section>
 
-      <Section id="track-added" className="min-h-full">
-        <SectionTitle
-          title="Recently Added"
-          description="An overview of recently added tracks to playlists."
-        />
-        <Select
-          data={playlists?.map(p => ({ value: p.id.toString(), label: p.name }))}
-          value={filterCreated.playlistId?.toString()}
-          onChange={(v) => setFilterCreated({ ...filterCreated, playlistId: v ? v : undefined })}
-          placeholder="Filter track by playlist..."
-          disabled={isLoadingPlaylists}
-        />
-        <TrackAddedTable filter={filterCreated} />
-      </Section>
-
-      <Section id="track-deleted" className="min-h-full">
-        <SectionTitle
-          title="Recently Deleted"
-          description="An overview of recently deleted tracks from playlists."
-        />
-        <Select
-          data={playlists?.map(p => ({ value: p.id.toString(), label: p.name }))}
-          value={filterDeleted.playlistId?.toString()}
-          onChange={(v) => setFilterDeleted({ ...filterDeleted, playlistId: v ? v : undefined })}
-          placeholder="Filter track by playlist..."
-          disabled={isLoadingPlaylists}
-        />
-        <TrackDeletedTable filter={filterDeleted} />
-      </Section>
     </Page>
   )
 }
