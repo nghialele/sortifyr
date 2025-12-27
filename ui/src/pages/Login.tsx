@@ -7,7 +7,7 @@ export const Login = () => {
 
   return (
     <Center h="100vh">
-      <Paper radius="md" shadow="sm" p="xl" className="w-96">
+      <Paper radius="md" shadow="xl" p="xl" className="w-96">
         <Stack align="center">
           <Title order={1}>Login</Title>
           <p className="text-muted">Sortifyr</p>
