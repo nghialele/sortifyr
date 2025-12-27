@@ -7,6 +7,11 @@ SELECT *
 FROM tracks
 WHERE spotify_id = $1;
 
+-- name: TrackGetByName :many
+SELECT *
+FROM tracks
+WHERE name = $1;
+
 -- name: TrackGetByPlaylist :many
 SELECT t.*
 FROM tracks t

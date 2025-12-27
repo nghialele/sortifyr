@@ -118,10 +118,35 @@ func (c *client) playlistUpdate(ctx context.Context, user model.User) error {
 		tracksSpotify := utils.SliceMap(tracksSpotifyAPI, func(t api.Track) model.Track { return t.ToModel() })
 
 		if err := syncUserData(syncUserDataStruct[model.Track]{
-			DB:     utils.SliceDereference(tracksDB),
-			API:    tracksSpotify,
-			Equal:  func(t1, t2 model.Track) bool { return t1.Equal(t2) },
-			Get:    func(t model.Track) (*model.Track, error) { return c.track.GetBySpotify(ctx, t.SpotifyID) },
+			DB:  utils.SliceDereference(tracksDB),
+			API: tracksSpotify,
+			Equal: func(t1, t2 model.Track) bool {
+				// Unavailable tracks have no spotify id
+				// So we need another method to check for equality if that is the case
+				if t1.SpotifyID != "" || t2.SpotifyID != "" {
+					return t1.Equal(t2)
+				}
+
+				return t1.Name == t2.Name
+			},
+			Get: func(t model.Track) (*model.Track, error) {
+				// Again we need to support tracks without spotify id
+				if t.SpotifyID != "" {
+					return c.track.GetBySpotify(ctx, t.SpotifyID)
+				}
+
+				tracks, err := c.track.GetByName(ctx, t.Name)
+				if err != nil {
+					return nil, err
+				}
+
+				// Only look for other tracks without spotify id (unavailable)
+				if tt, ok := utils.SliceFind(tracks, func(t *model.Track) bool { return t.SpotifyID == "" }); ok {
+					return *tt, nil
+				}
+
+				return nil, nil
+			},
 			Create: func(t *model.Track) error { return c.track.Create(ctx, t) },
 			CreateUserLink: func(t model.Track) error {
 				return c.playlist.CreateTrack(ctx, &model.PlaylistTrack{PlaylistID: (*playlistDB).ID, TrackID: t.ID})

@@ -45,6 +45,18 @@ func (t *Track) GetBySpotify(ctx context.Context, spotifyID string) (*model.Trac
 	return model.TrackModel(track), nil
 }
 
+func (t *Track) GetByName(ctx context.Context, name string) ([]*model.Track, error) {
+	tracks, err := t.repo.queries(ctx).TrackGetByName(ctx, toString(name))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("get tracks by name %s | %w", name, err)
+	}
+
+	return utils.SliceMap(tracks, model.TrackModel), nil
+}
+
 func (t *Track) GetByPlaylist(ctx context.Context, playlistID int) ([]*model.Track, error) {
 	tracks, err := t.repo.queries(ctx).TrackGetByPlaylist(ctx, int32(playlistID))
 	if err != nil {
