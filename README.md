@@ -2,131 +2,197 @@
 
 A web application to help organize and automate your Spotify playlists.
 
-While this tool is fully functional for general use, it is designed around __my own playlist organization system__.
-So a few features may seem odd at first glance.
-
-Nevertheless, many of the concepts are broadly useful for anyone with a large / structured Spotify library.
-
-To give an idea for whom this might by useful, this is my setup:
-
-<details>
-  <summary>Personal setup</summary>
-
-  I organize playlists into directory trees.
-  My two main root directories are:
-
-  __All__: A complete archive of everything \
-  __Good__: A curated version I listen to daily
-
-  These directories mirror each other for the most part in structure.
-  
-  When I add new music, I add it to a playlist under __Good__.
-  This tool automatically copies it to the correct playlist(s) in the __All__ directory.
-  Later, when I grow tired of the track, I remove it from __Good__, but it remains archived under __All__ so I never lose it.
-
-  A simplified schematic:
-
-```
-Root/
-  All/
-    Genres/
-      Pop
-      Rock
-    Instrument/
-      Piano
-      Guitar
-  Good/
-    Genres/
-      Pop
-      Rock
-    Instrument/
-      Piano
-      Guitar
-```
-
-</details>
+- Detect duplicate and unavailable tracks in playlists
+- Keep track of your all time listening history and playlist changes
+- Create one-way synchronized playlists links
 
 ## Features
 
-__Playlists__
+### Playlists
 
-- Fetches all your added playlists and their tracks (also playlists you saved from someone else).
-- Spotify does __not__ expose Spotify-created playlists that you saved, so those cannot be fetched.
+<details>
+  <summary>Duplicate tracks</summary>
 
-__Directories__
+  Find any duplicate track in a playlist.
+  You can trigger an automatic deletion of any duplicate entries.
 
-Spotify does not expose playlist folders through the API, that's why this project includes its own internal directory system.
+  ![Playlist duplicate tracks](./screenshots/playlist_duplicate.png)
 
-It mirrors the Spotify system but you have to manually keep it in sync.
+  > [!NOTE]
+  > Due to Spotify API limitations this will first delete every instance
+  > of the duplicate track in the playlist and afterwards add it back.
+</details>
 
-While it is not necessary for other features that you use the directory system, it is recommended.
+<details>
+  <summary>Unplayable tracks</summary>
 
-__Links__
+  Find any track that is no longer playable.
+  This can happen because of various reasons, for example licensing issues.
 
-A link defines a one-way relationship between a _source_ and a _target_:
+  These tracks are recognizable by being grayed out.
+  Unfortunately due to Spotify API limitations these tracks cannot be deleted with API calls.
+  You'll have to delete them manually. The easiest way to find them is by sorting a playlist by artist.
+  They will appear at the top.
 
-- The _source_ can be a playlist or a directory
-- The _target_ can be a playlist or a directory
-- Tracks from the source are automatically copied into the target
+  ![Playlist unplayable tracks](./screenshots/playlist_unplayable.png)
+</details>
 
-Examples:
+### Tracks
 
-- Source: a directory \
-  -> Target: a playlist \
-  -> Result: The playlist will contain all tracks from all playlists under the directory (including nested subdirectories).
-- Source: a playlist \
-  -> Target: a directory \
-  -> Result: all playlists inside that directory (or nested subdirectories) receive the new tracks.
+<details>
+  <summary>History</summary>
 
-This system enables setups like:
+  An overview of your history.
+  It will show any track that you listened to or was played in a jam that you were a part of.
 
-- Always have a _master playlist_ containing everything I saved.
-- Mirror playlists into archive playlists.
-- Build automatic multi genre aggregators.
+  A track is only counted as played after you listened to it for at least 20 seconds, however
+  due to the internal workings of the application it can be up to 40 seconds before a track is considered played.
 
-### Future features
+  ![Track history](./screenshots/track_history.png)
+</details>
 
-Have a look at the issues to get a sneak peak of upcoming features!
+<details>
+  <summary>Recently added / removed</summary>
+
+  An overview of recently added and removed tracks from any playlist.
+
+  ![Track added](./screenshots/track_added.png)
+</details>
+
+### Directories
+
+<details>
+  <summary>Directories</summary>
+
+  In the Spotify client you can organize your playlists in directories.
+  However Spotify doesn't expose this information in their API.
+
+  You can manually mirror your directory structure if desired.
+  The directory structure is used in other locations of the application.
+
+  ![Directory](./screenshots/directory.png)
+</details>
+
+### Links
+
+<details>
+  <summary>Links</summary>
+
+  This is in all fairness a very niche feature.
+  But it is the reason why I started this project.
+
+  **Short**
+
+  Links allow you to one-way synchronize playlists / directories.
+  
+  **Long**
+
+  It's best explained with an example.
+  This is a simplified version of my personal Spotify organize structure
+
+  ```
+  Root/
+    All/
+      Genres/
+        Pop
+        Rock
+      Instrument/
+        Piano
+        Guitar
+    Good/
+      Genres/
+        Pop
+        Rock
+      Instrument/
+        Piano
+        Guitar
+  ```
+
+  As you can see there are 2 main directories, _All_ and _Good_.
+  For the most part they mirror each other.
+
+  What I generally do, is when I discover a new song that I like I add it to the right playlist in my _Good_ directory.
+  Whenever I play some music I shuffle a playlist inside the _Good_ directory.
+  When I eventually grow tired of the track I simply delete it.
+
+  However I don't want it to be gone forever!
+  That's where the _All_ directory comes in.
+  It contains any track I ever added to the _Good_ directory.
+  So when I delete something in the _Good_ directory, I can still find it in the _All_ directory.
+
+  I'm using links to automatically add any track I add in _Good_ to the right playlist in _All_.
+  On top of that I have a master playlist that contains every track in any other playlist.
+
+  ![Link](./screenshots/link.png)
+</details>
+
+## FAQ
+
+<details>
+  <summary>Does it automatically modify my playlists?</summary>
+
+  Only if configured to do so.
+  By default it only tracks your Spotify data.
+
+  However when starting a duplicate removal task or setting up links then it will modify playlists.
+</details>
+
+<details>
+  <summary>Can this get my Spotify account banned?</summary>
+
+  No.
+  It uses the official Spotify Web API.
+
+  Spotify has very clear [rules](https://developer.spotify.com/terms) on what is allowed.
+  If you have a reason to believe this project breaches any them
+  please contact me personally or by creating an issue.
+</details>
+
+<details>
+  <summary>What's the worst that can happen to my playlists?</summary>
+
+  The absolute worst situation I can think of is that you misconfigure a link.
+  And all that it'll do is add some unwanted tracks to a playlist.
+</details>
 
 ## Spotify App setup
 
-To use this tool you must create a Spotify Developer App, which provides the credentials needed for authentication.
+> [!IMPORTANT]
+> A Spotify premium account is required
+
+This web application requires you to have a Spotify Developer app, which provides the credentials needed for authentication.
 
 1. Go to the [Spotify developers website](https://developer.spotify.com/).
-2. Open your profile menu -> __Dashboard__.
-3. Click __Create App__.
+2. Open your profile menu -> **Dashboard**.
+3. Click **Create App**.
 4. Fill out the form. Pay attention to:
-    - __Redirect URIs__:
+    - **Redirect URIs**:
         - Reverse Proxy: `https://<domain>/api/auth/callback/spotify`
-        - Local: `http://127.0.0.1:<port>/api/auth/callback/spotify` (default production port: __8000__, development: __3001__)
-    - __Which API are you planning to use?__:
+        - Local: `http://127.0.0.1:<port>/api/auth/callback/spotify` (default production port: **8000**, development: **3001**)
+    - **Which API are you planning to use?**:
         - Choose Web API
-5. After creation you can access your __client ID__ and __client secret__.
+5. After creation you can access your **client ID** and **client secret**.
+
+> [!WARNING]
+> By default only the owner of the developer app can login.
+> You can add up to 25 extra users in the Spotify app dashboard.
 
 ## Production Deployment
-
-__Important Notes__
-
-- The webapp uses Spotify authentication, meaning _anyone with a Spotify account can log into your instance_.
-  The application supports multiple users, but all actions will occur through __your__ Spotify Developer App credentials.
-  Worst-case scenario: someone could intentionally overload your app with API calls, causing temporary rate limiting.
-- Spotify has clear [terms and conditions](https://developer.spotify.com/terms) for the usage of their web API.
-  If you believe this project violates any policies, please open an issue so it can be corrected.
 
 ### Recommended Deployment (Docker)
 
 1. Copy `docker-compose.prod.yml` -> `docker-compose.yml`.
 2. Copy `.env.prod.example` -> `.env`.
 3. Create your Spotify app and fill in the environment variables.
-4. Run `docker compose up`.
-5. The server is reachable on port __8000__.
+4. Run `docker compose up -d`.
+5. The server is reachable on port **8000**.
 
 To update:
 
 ```bash
 docker compose pull
 docker compose down
-docker compose up
+docker compose up -d
 ```
 
 ### Manual Setup (Advanced)
@@ -135,9 +201,9 @@ The container image is published as: `ghcr.io/topvennie/sortifyr`.
 
 Required additional services:
 
-- __Postgres__
-- __Redis__
-- __S3 compatible storage__
+- **Postgres**
+- **Redis**
+- **S3 compatible storage**
 
 Configuration variables can be overridden via environment variables.
 Keys use uppercase and replace `.` with `_` (e.g. `redis.url` -> `REDIS_URL`)
@@ -157,7 +223,7 @@ You will probably need to change a couple to use your own services.
 2. Install _make_.
 3. Run `make setup` to install:
     - Backend tools: _Air_, _Goose_, _Sqlc_, _Deadcode_
-    - Frontend depedencies
+    - Frontend dependencies
 4. Install the git hooks for code quality: `git config --local core.hooksPath .githooks/`.
 5. Copy `.env.example` -> `.env`.
 6. Create a Spotify app (see above).
@@ -167,8 +233,8 @@ You will probably need to change a couple to use your own services.
 
 Endpoints:
 
-- __Backend__: <http://127.0.0.1:3001>
-- __Frontend__: <http://127.0.0.1:3000>
+- **Backend**: <http://127.0.0.1:3001>
+- **Frontend**: <http://127.0.0.1:3000>
 
 ### Makefile Commands
 
@@ -177,7 +243,7 @@ For an overview of all commands see the makefile.
 
 A few common commands:
 
-__Start the full stack__
+**Start the full stack**
 
 ```bash
 make watch
@@ -186,20 +252,20 @@ make watch
 Starts backend + frontend with hot module reloading.
 (Requires restart after adding or removing dependencies).
 
-__Create a new migration__
+**Create a new migration**
 
 ```bash
 make create-migration
 ```
 
-Prompts fro a name and then creates a new migration under `db/migrations`.
+Prompts for a name and then creates a new migration under `db/migrations`.
 Edit the SQL, optionally add new queries under `db/queries`, then run:
 
 ```bash
 make query
 ```
 
-__Update SQLC queries__
+**Update SQLC queries**
 
 ```bash
 make query
