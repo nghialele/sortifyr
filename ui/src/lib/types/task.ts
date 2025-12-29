@@ -19,7 +19,8 @@ export interface Task {
   lastRun?: Date;
   lastMessage?: string;
   lastError?: string;
-  interval: number;
+  interval?: number;
+  recurring: boolean;
 }
 
 export interface TaskHistory {
@@ -35,6 +36,7 @@ export interface TaskHistory {
 export interface TaskHistoryFilter {
   uid?: string;
   result?: TaskResult;
+  recurring?: boolean;
 }
 
 export const convertTask = (task: API.Task): Task => {
@@ -48,6 +50,7 @@ export const convertTask = (task: API.Task): Task => {
     lastMessage: task.last_message,
     lastError: task.last_error,
     interval: task.interval,
+    recurring: task.recurring,
   };
 }
 

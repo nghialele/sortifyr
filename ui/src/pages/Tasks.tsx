@@ -1,10 +1,12 @@
 import { Page, PageTitle, Section, SectionTitle } from "@/components/atoms/Page"
+import { Segment } from "@/components/molecules/Segment"
 import { Select } from "@/components/molecules/Select"
 import { TaskHistory } from "@/components/task/TaskHistory"
 import { TaskTable } from "@/components/task/TaskTable"
 import { useTaskGetAll } from "@/lib/api/task"
 import { TaskHistoryFilter, TaskResult } from "@/lib/types/task"
-import { Chip, Group } from "@mantine/core"
+import { capitalize } from "@/lib/utils"
+import { Group } from "@mantine/core"
 import { useState } from "react"
 
 export const Tasks = () => {
@@ -16,12 +18,20 @@ export const Tasks = () => {
     setFilter({ ...filter, uid: value ? value : undefined })
   }
 
-  const handleResultChange = (value: string | string[]) => {
-    let newResult: TaskResult | undefined = undefined
+  const handleResultChange = (value: string) => {
+    let result: TaskResult | undefined = undefined
 
-    if (value !== "all") newResult = value as TaskResult
+    if (value !== "all") result = value as TaskResult
 
-    setFilter({ ...filter, result: newResult })
+    setFilter({ ...filter, result: result })
+  }
+
+  const handleRecurringChange = (value: string) => {
+    let recurring: boolean | undefined = undefined
+
+    if (value != "all") recurring = value === "true"
+
+    setFilter({ ...filter, recurring })
   }
 
   return (
@@ -55,11 +65,25 @@ export const Tasks = () => {
             placeholder="Filter by task name..."
             disabled={isLoadingTasks}
           />
-          <Chip.Group value={filter.result ? filter.result : "all"} onChange={handleResultChange}>
-            <Chip value="all" color="secondary.2">All</Chip>
-            <Chip value="success" color="secondary.2">Success</Chip>
-            <Chip value="failed" color="secondary.2">Error</Chip>
-          </Chip.Group>
+          <Segment
+            data={[
+              { value: "all", label: "All" },
+              ...Object.values(TaskResult).map(r => ({ value: r, label: capitalize(r) }))
+            ]}
+            value={filter.result ? filter.result : "all"}
+            onChange={handleResultChange}
+            secondary
+          />
+          <Segment
+            data={[
+              { value: "all", label: "All" },
+              { value: "true", label: "Recurring" },
+              { value: "false", label: "Non-recurring" },
+            ]}
+            value={filter.recurring !== undefined ? String(filter.recurring) : "all"}
+            onChange={handleRecurringChange}
+            secondary
+          />
         </Group>
         <TaskHistory filter={filter} />
       </Section>

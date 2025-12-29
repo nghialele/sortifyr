@@ -1,6 +1,8 @@
 package api
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/internal/server/dto"
@@ -51,13 +53,21 @@ func (r *Task) getHistory(c *fiber.Ctx) error {
 	}
 
 	uid := c.Query("uid")
-	resultStr := c.Query("result")
 
 	var result *model.TaskResult
-	switch resultStr {
-	case string(model.TaskSuccess), string(model.TaskFailed):
-		resultTmp := model.TaskResult(resultStr)
-		result = &resultTmp
+	if v := c.Query("result"); v != "" {
+		switch v {
+		case string(model.TaskSuccess), string(model.TaskFailed):
+			r := model.TaskResult(v)
+			result = &r
+		}
+	}
+
+	var recurring *bool
+	if v := c.Query("recurring"); v != "" {
+		if b, err := strconv.ParseBool(v); err == nil {
+			recurring = &b
+		}
 	}
 
 	limit := c.QueryInt("limit", 10)
@@ -67,11 +77,12 @@ func (r *Task) getHistory(c *fiber.Ctx) error {
 	}
 
 	tasks, err := r.task.GetHistory(c.Context(), dto.TaskFilter{
-		UserID:  userID,
-		TaskUID: uid,
-		Result:  result,
-		Limit:   limit,
-		Offset:  (page - 1) * limit,
+		UserID:    userID,
+		TaskUID:   uid,
+		Result:    result,
+		Limit:     limit,
+		Recurring: recurring,
+		Offset:    (page - 1) * limit,
 	})
 	if err != nil {
 		return err

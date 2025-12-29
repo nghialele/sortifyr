@@ -168,9 +168,10 @@ type ShowUser struct {
 }
 
 type Task struct {
-	Uid    string
-	Name   string
-	Active bool
+	Uid       string
+	Name      string
+	Active    bool
+	Recurring bool
 }
 
 type TaskRun struct {

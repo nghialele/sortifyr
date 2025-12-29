@@ -38,9 +38,11 @@ export function useTaskGetHistory(filter?: TaskHistoryFilter) {
       if (filter?.uid !== undefined) {
         queryParams.append("uid", filter.uid);
       }
-
       if (filter?.result !== undefined) {
         queryParams.append("result", filter.result.toString())
+      }
+      if (filter?.recurring !== undefined) {
+        queryParams.append("recurring", String(filter.recurring))
       }
 
       const url = `${ENDPOINT}/history?${queryParams.toString()}`;

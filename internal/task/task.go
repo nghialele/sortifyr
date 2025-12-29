@@ -10,6 +10,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var IntervalOnce = time.Duration(0)
+
 // Init intializes the global task manager instance
 func Init(repo repository.Repository) error {
 	manager, err := newManager(repo)
@@ -35,11 +37,12 @@ type Task interface {
 	// You can change this as much as you like
 	Name() string
 	// Interval returns the time between executions.
+	// An interval == IntervalOnce means it will only run once.
 	Interval() time.Duration
 	// The function that actually gets executed when it's time
-	// The user slice contains all users for who the task need to executed
+	// The user slice contains all users for who the task needs to executed
 	// In reality this will either be a single user (if the user started the task from the api)
-	// Or it contain all users if it's a regular interval run
+	// or contain all users if it's a regular interval run
 	// It's up to the function to decide how to handle it
 	// If the returned task result does not contain one of the users that was given as argument
 	// then the task result is not saved for that user
@@ -63,12 +66,13 @@ const (
 
 // Stat contains the information about a current running or scheduled task
 type Stat struct {
-	TaskUID  string
-	Name     string
-	Status   Status
-	NextRun  time.Time
-	LastRun  time.Time
-	Interval time.Duration
+	TaskUID   string
+	Name      string
+	Status    Status
+	NextRun   time.Time
+	LastRun   time.Time
+	Interval  time.Duration
+	Recurring bool
 }
 
 type internalTask struct {
@@ -82,11 +86,11 @@ type internalTask struct {
 // Interface compliance
 var _ Task = (*internalTask)(nil)
 
-// NewTask creates a new task
+// NewTaskRecurring creates a new task
 // It supports an optional context, if none is given the background context is used
 // Logs (info level) when a task starts and ends
 // Logs (error level) any error that occurs during the task execution
-func NewTask(uid, name string, interval time.Duration, fn func(context.Context, []model.User) []TaskResult, ctx ...context.Context) Task {
+func NewTaskRecurring(uid, name string, interval time.Duration, fn func(context.Context, []model.User) []TaskResult, ctx ...context.Context) Task {
 	c := context.Background()
 	if len(ctx) > 0 {
 		c = ctx[0]

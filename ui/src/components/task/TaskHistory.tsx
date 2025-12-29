@@ -1,11 +1,11 @@
 import { useTaskGetHistory } from "@/lib/api/task";
 import { TaskHistoryFilter } from "@/lib/types/task";
 import { formatDate } from "@/lib/utils";
+import { ActionIcon } from "@mantine/core";
+import { useState } from "react";
+import { LuTriangle } from "react-icons/lu";
 import { Table } from "../molecules/Table";
 import { TaskResult } from "./TaskResult";
-import { ActionIcon } from "@mantine/core";
-import { LuTriangle } from "react-icons/lu";
-import { useState } from "react";
 
 type Props = {
   filter?: TaskHistoryFilter;

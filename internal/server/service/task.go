@@ -100,6 +100,9 @@ func (t *Task) Start(ctx context.Context, userID int, taskUID string) error {
 	if taskModel == nil {
 		return fiber.ErrNotFound
 	}
+	if !taskModel.Recurring || !taskModel.Active {
+		return fiber.ErrBadRequest
+	}
 
-	return task.Manager.RunByUID(taskUID, *user)
+	return task.Manager.RunRecurringByUID(taskUID, *user)
 }

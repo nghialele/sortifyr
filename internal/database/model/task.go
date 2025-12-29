@@ -25,9 +25,10 @@ type Task struct {
 	Duration time.Duration
 
 	// Task fields
-	UID    string // Identifier of the task
-	Name   string
-	Active bool
+	UID       string // Identifier of the task
+	Name      string
+	Active    bool
+	Recurring bool
 }
 
 func TaskModel(task sqlc.Task, taskRun sqlc.TaskRun) *Task {
@@ -45,23 +46,25 @@ func TaskModel(task sqlc.Task, taskRun sqlc.TaskRun) *Task {
 	}
 
 	return &Task{
-		ID:       int(taskRun.ID),
-		UserID:   int(taskRun.UserID),
-		RunAt:    taskRun.RunAt.Time,
-		Result:   TaskResult(taskRun.Result),
-		Message:  message,
-		Error:    err,
-		Duration: time.Duration(taskRun.Duration),
-		UID:      uid,
-		Name:     task.Name,
-		Active:   task.Active,
+		ID:        int(taskRun.ID),
+		UserID:    int(taskRun.UserID),
+		RunAt:     taskRun.RunAt.Time,
+		Result:    TaskResult(taskRun.Result),
+		Message:   message,
+		Error:     err,
+		Duration:  time.Duration(taskRun.Duration),
+		UID:       uid,
+		Name:      task.Name,
+		Active:    task.Active,
+		Recurring: task.Recurring,
 	}
 }
 
 type TaskFilter struct {
-	UserID  int
-	TaskUID string
-	Result  *TaskResult
-	Limit   int
-	Offset  int
+	UserID    int
+	TaskUID   string
+	Result    *TaskResult
+	Recurring *bool
+	Limit     int
+	Offset    int
 }

@@ -44,25 +44,28 @@ type Task struct {
 	LastMessage string           `json:"last_message,omitempty"`
 	LastError   string           `json:"last_error,omitempty"`
 	Interval    *time.Duration   `json:"interval,omitzero"`
+	Recurring   bool             `json:"recurring"`
 }
 
 func TaskDTO(task task.Stat) Task {
 	return Task{
-		TaskUID:  task.TaskUID,
-		Name:     task.Name,
-		Status:   task.Status,
-		NextRun:  task.NextRun,
-		LastRun:  &task.LastRun,
-		Interval: &task.Interval,
+		TaskUID:   task.TaskUID,
+		Name:      task.Name,
+		Status:    task.Status,
+		NextRun:   task.NextRun,
+		LastRun:   &task.LastRun,
+		Interval:  &task.Interval,
+		Recurring: task.Recurring,
 	}
 }
 
 type TaskFilter struct {
-	UserID  int
-	TaskUID string
-	Result  *model.TaskResult
-	Limit   int
-	Offset  int
+	UserID    int
+	TaskUID   string
+	Result    *model.TaskResult
+	Recurring *bool
+	Limit     int
+	Offset    int
 }
 
 func (t *TaskFilter) ToModel() *model.TaskFilter {

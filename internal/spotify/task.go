@@ -21,7 +21,7 @@ const (
 )
 
 func (c *client) taskRegister() error {
-	if err := task.Manager.Add(context.Background(), task.NewTask(
+	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
 		taskPlaylistUID,
 		"Playlist",
 		config.GetDefaultDuration("task.playlist_s", 60*60),
@@ -30,7 +30,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTask(
+	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
 		taskAlbumUID,
 		"Album",
 		config.GetDefaultDuration("task.album_s", 60*60),
@@ -39,7 +39,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTask(
+	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
 		taskShowUID,
 		"Show",
 		config.GetDefaultDuration("task.show_s", 12*60*60),
@@ -48,7 +48,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTask(
+	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
 		taskTrackUID,
 		"Track",
 		config.GetDefaultDuration("task.track_s", 5*60),
@@ -57,7 +57,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTask(
+	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
 		taskArtistUID,
 		"Artist",
 		config.GetDefaultDuration("task.artist_s", 5*60),
@@ -66,7 +66,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTask(
+	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
 		taskUserUID,
 		"User",
 		config.GetDefaultDuration("task.user_s", 6*60*60),
@@ -75,7 +75,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTask(
+	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
 		taskHistoryUID,
 		"Current",
 		config.GetDefaultDuration("task.history_s", 15),
@@ -84,7 +84,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTask(
+	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
 		taskLinkUID,
 		"Link",
 		config.GetDefaultDuration("task.link_s", 12*60*60),

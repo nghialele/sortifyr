@@ -7,26 +7,34 @@ package sqlc
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const taskCreate = `-- name: TaskCreate :exec
-INSERT INTO tasks (uid, name, active)
-VALUES ($1, $2, $3)
+INSERT INTO tasks (uid, name, active, recurring)
+VALUES ($1, $2, $3, $4)
 `
 
 type TaskCreateParams struct {
-	Uid    string
-	Name   string
-	Active bool
+	Uid       string
+	Name      string
+	Active    bool
+	Recurring bool
 }
 
 func (q *Queries) TaskCreate(ctx context.Context, arg TaskCreateParams) error {
-	_, err := q.db.Exec(ctx, taskCreate, arg.Uid, arg.Name, arg.Active)
+	_, err := q.db.Exec(ctx, taskCreate,
+		arg.Uid,
+		arg.Name,
+		arg.Active,
+		arg.Recurring,
+	)
 	return err
 }
 
 const taskGetByUID = `-- name: TaskGetByUID :one
-SELECT uid, name, active
+SELECT uid, name, active, recurring
 FROM tasks
 WHERE uid = $1
 `
@@ -34,31 +42,39 @@ WHERE uid = $1
 func (q *Queries) TaskGetByUID(ctx context.Context, uid string) (Task, error) {
 	row := q.db.QueryRow(ctx, taskGetByUID, uid)
 	var i Task
-	err := row.Scan(&i.Uid, &i.Name, &i.Active)
+	err := row.Scan(
+		&i.Uid,
+		&i.Name,
+		&i.Active,
+		&i.Recurring,
+	)
 	return i, err
 }
 
 const taskGetFiltered = `-- name: TaskGetFiltered :many
-SELECT t.uid, t.name, t.active, r.id, r.task_uid, r.user_id, r.run_at, r.result, r.error, r.duration, r.message
+SELECT t.uid, t.name, t.active, t.recurring, r.id, r.task_uid, r.user_id, r.run_at, r.result, r.error, r.duration, r.message
 FROM task_runs r
 LEFT JOIN tasks t ON t.uid = r.task_uid
 WHERE
   r.user_id = $1::int AND
-  (t.uid = $2 OR NOT $6) AND
-  (r.result = $3 OR NOT $7) AND
+  (t.uid = $2 OR NOT $7) AND
+  (r.result = $3 OR NOT $8) AND
+  (t.recurring = $4 OR NOT $9) AND
   t.active
 ORDER BY r.run_at DESC
-LIMIT $4 OFFSET $5
+LIMIT $5 OFFSET $6
 `
 
 type TaskGetFilteredParams struct {
-	Column1       int32
-	Uid           string
-	Result        TaskResult
-	Limit         int32
-	Offset        int32
-	FilterTaskUid interface{}
-	FilterResult  interface{}
+	Column1         int32
+	Uid             string
+	Result          TaskResult
+	Recurring       bool
+	Limit           int32
+	Offset          int32
+	FilterTaskUid   interface{}
+	FilterResult    interface{}
+	FilterRecurring interface{}
 }
 
 type TaskGetFilteredRow struct {
@@ -71,10 +87,12 @@ func (q *Queries) TaskGetFiltered(ctx context.Context, arg TaskGetFilteredParams
 		arg.Column1,
 		arg.Uid,
 		arg.Result,
+		arg.Recurring,
 		arg.Limit,
 		arg.Offset,
 		arg.FilterTaskUid,
 		arg.FilterResult,
+		arg.FilterRecurring,
 	)
 	if err != nil {
 		return nil, err
@@ -87,6 +105,7 @@ func (q *Queries) TaskGetFiltered(ctx context.Context, arg TaskGetFilteredParams
 			&i.Task.Uid,
 			&i.Task.Name,
 			&i.Task.Active,
+			&i.Task.Recurring,
 			&i.TaskRun.ID,
 			&i.TaskRun.TaskUid,
 			&i.TaskRun.UserID,
@@ -107,7 +126,7 @@ func (q *Queries) TaskGetFiltered(ctx context.Context, arg TaskGetFilteredParams
 }
 
 const taskRunGet = `-- name: TaskRunGet :one
-SELECT t.uid, t.name, t.active, r.id, r.task_uid, r.user_id, r.run_at, r.result, r.error, r.duration, r.message
+SELECT t.uid, t.name, t.active, t.recurring, r.id, r.task_uid, r.user_id, r.run_at, r.result, r.error, r.duration, r.message
 FROM task_runs r
 LEFT JOIN tasks t ON t.uid = r.task_uid
 WHERE r.id = $1
@@ -125,6 +144,7 @@ func (q *Queries) TaskRunGet(ctx context.Context, id int32) (TaskRunGetRow, erro
 		&i.Task.Uid,
 		&i.Task.Name,
 		&i.Task.Active,
+		&i.Task.Recurring,
 		&i.TaskRun.ID,
 		&i.TaskRun.TaskUid,
 		&i.TaskRun.UserID,
@@ -149,17 +169,26 @@ func (q *Queries) TaskSetInactiveAll(ctx context.Context) error {
 
 const taskUpdate = `-- name: TaskUpdate :exec
 UPDATE tasks
-SET name = $2, active = $3
+SET 
+  name = coalesce($2, name),
+  active = coalesce($3, active),
+  recurring = coalesce($4, recurring)
 WHERE uid = $1
 `
 
 type TaskUpdateParams struct {
-	Uid    string
-	Name   string
-	Active bool
+	Uid       string
+	Name      pgtype.Text
+	Active    pgtype.Bool
+	Recurring pgtype.Bool
 }
 
 func (q *Queries) TaskUpdate(ctx context.Context, arg TaskUpdateParams) error {
-	_, err := q.db.Exec(ctx, taskUpdate, arg.Uid, arg.Name, arg.Active)
+	_, err := q.db.Exec(ctx, taskUpdate,
+		arg.Uid,
+		arg.Name,
+		arg.Active,
+		arg.Recurring,
+	)
 	return err
 }

@@ -51,7 +51,8 @@ export namespace API {
     last_run?: string;
     last_message?: string;
     last_error?: string;
-    interval: number;
+    interval?: number;
+    recurring: boolean;
   }
 
   export interface TaskHistory extends Base {

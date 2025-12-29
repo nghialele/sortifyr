@@ -63,17 +63,20 @@ func newManager(repo repository.Repository) (*manager, error) {
 	return manager, nil
 }
 
-// Add adds a new task to the manager.
-// It immediately runs the task and then schedules it according to the interval.
+// Add adds a new task to the manager
 // An unique uid is required.
-// History logs (in the DB) for recurrent tasks are accessed by uid.
-// If you change a task's uid then all it's history will be lost (but still in the DB)
+// if you change a task's uid then all it's history will be lost (but still in the DB)
+// Recurring tasks (defined by the interval != IntervalOnce) will be schedules according to the interval
+// If the interval is production then a recurring task will immediately be run when added.
+// Non recurring tasks will immediately be executed.
 func (m *manager) Add(ctx context.Context, newTask Task) error {
-	zap.S().Infof("Adding task: %s | interval: %s", newTask.Name(), newTask.Interval())
+	zap.S().Infof("Adding task: %s", newTask.Name())
 
 	if _, ok := m.jobs[newTask.UID()]; ok {
 		return fmt.Errorf("task %s already exists (uid: %s)", newTask.Name(), newTask.UID())
 	}
+
+	isRecurring := newTask.Interval() != IntervalOnce
 
 	task, err := m.repoTask.GetByUID(ctx, newTask.UID())
 	if err != nil {
@@ -91,40 +94,56 @@ func (m *manager) Add(ctx context.Context, newTask Task) error {
 		// New task
 		// Let's create it
 		task = &model.Task{
-			UID:    newTask.UID(),
-			Name:   newTask.Name(),
-			Active: true,
+			UID:       newTask.UID(),
+			Name:      newTask.Name(),
+			Active:    isRecurring,
+			Recurring: isRecurring,
 		}
 		if err := m.repoTask.Create(ctx, *task); err != nil {
 			return err
 		}
 	}
 
+	// We lock it early so that jobs can't run immediately until we release the lock.
+	// We only release is once we add it to the map.
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// Will immediately try to execute but it'll have to wait until the lock is released
 	options := []gocron.JobOption{
 		gocron.WithName(task.UID),
 		gocron.WithContext(newTask.Ctx()),
 		gocron.WithTags(task.UID),
 	}
-	if !m.isDev {
-		// Only start tasks immediately in production environments
+	if isRecurring && !m.isDev {
+		// Only start tasks immediately in production environment
+		// This will only impact recurring tasks
+		// Tasks run once will always run immediately regardless of the environment
 		options = append(options, gocron.WithStartAt(gocron.WithStartImmediately()))
 	}
 
+	var def gocron.JobDefinition
+	if isRecurring {
+		def = gocron.DurationJob(newTask.Interval())
+	} else {
+		def = gocron.OneTimeJob(gocron.OneTimeJobStartImmediately())
+	}
+
 	if _, err := m.scheduler.NewJob(
-		gocron.DurationJob(newTask.Interval()),
+		def,
 		gocron.NewTask(m.wrap(newTask)),
 		options...,
 	); err != nil {
 		return fmt.Errorf("failed to add task %+v | %w", *task, err)
 	}
 
+	status := Waiting
+	if !isRecurring {
+		status = Running
+	}
+
 	m.jobs[task.UID] = job{
 		task:     *task,
-		status:   Waiting,
+		status:   status,
 		interval: newTask.Interval(),
 		users:    []model.User{},
 	}
@@ -132,8 +151,8 @@ func (m *manager) Add(ctx context.Context, newTask Task) error {
 	return nil
 }
 
-// RunByUID runs a pre existing task given a task UID.
-func (m *manager) RunByUID(taskUID string, user model.User) error {
+// RunRecurringByUID runs a pre existing recurring task given a task UID.
+func (m *manager) RunRecurringByUID(taskUID string, user model.User) error {
 	var job gocron.Job
 	for _, j := range m.scheduler.Jobs() {
 		if taskUID == j.Tags()[0] {
@@ -152,6 +171,12 @@ func (m *manager) RunByUID(taskUID string, user model.User) error {
 		m.mu.Unlock()
 		return fmt.Errorf("task with uid %s not found", taskUID)
 	}
+	if info.interval == IntervalOnce {
+		// It's a one time task
+		// Not allowed!
+		m.mu.Unlock()
+		return fmt.Errorf("task with uid %s is a one time task", taskUID)
+	}
 	info.users = append(info.users, user)
 	m.jobs[taskUID] = info
 	m.mu.Unlock()
@@ -166,13 +191,13 @@ func (m *manager) RunByUID(taskUID string, user model.User) error {
 // Tasks returns all scheduled tasks
 func (m *manager) Tasks() ([]Stat, error) {
 	m.mu.Lock()
-	jobs := m.scheduler.Jobs()
-	jobsRecurring := m.jobs
+	jobsGocron := m.scheduler.Jobs()
+	jobsLocal := m.jobs
 	m.mu.Unlock()
 
-	stats := make([]Stat, 0, len(jobs))
+	stats := make([]Stat, 0, len(jobsGocron))
 
-	for _, job := range jobs {
+	for _, job := range jobsGocron {
 		taskUID := job.Tags()[0]
 
 		nextRun, err := job.NextRun()
@@ -180,19 +205,20 @@ func (m *manager) Tasks() ([]Stat, error) {
 			return nil, fmt.Errorf("get next run for task %s | %w", job.Name(), err)
 		}
 
-		if j, ok := jobsRecurring[taskUID]; ok {
+		if j, ok := jobsLocal[taskUID]; ok {
 			lastRun, err := job.LastRun()
 			if err != nil {
 				return nil, fmt.Errorf("get last run for task %s | %w", job.Name(), err)
 			}
 
 			stats = append(stats, Stat{
-				TaskUID:  j.task.UID,
-				Name:     j.task.Name,
-				Status:   j.status,
-				NextRun:  nextRun,
-				LastRun:  lastRun,
-				Interval: j.interval,
+				TaskUID:   j.task.UID,
+				Name:      j.task.Name,
+				Status:    j.status,
+				NextRun:   nextRun,
+				LastRun:   lastRun,
+				Interval:  j.interval,
+				Recurring: j.interval != IntervalOnce,
 			})
 		}
 	}
@@ -204,6 +230,8 @@ func (m *manager) Tasks() ([]Stat, error) {
 
 func (m *manager) wrap(task Task) func(context.Context) {
 	return func(ctx context.Context) {
+		isRecurring := task.Interval() != IntervalOnce
+
 		m.mu.Lock()
 		info, ok := m.jobs[task.UID()]
 		if !ok {
@@ -249,7 +277,7 @@ func (m *manager) wrap(task Task) func(context.Context) {
 			taskDB := &model.Task{
 				UID:      task.UID(),
 				UserID:   result.User.ID,
-				RunAt:    time.Now(),
+				RunAt:    start,
 				Result:   taskResult,
 				Message:  result.Message,
 				Error:    result.Error,
@@ -264,8 +292,12 @@ func (m *manager) wrap(task Task) func(context.Context) {
 		m.mu.Lock()
 		defer m.mu.Unlock()
 
-		info = m.jobs[task.UID()]
-		info.status = Waiting
-		m.jobs[task.UID()] = info
+		if isRecurring {
+			info = m.jobs[task.UID()]
+			info.status = Waiting
+			m.jobs[task.UID()] = info
+		} else {
+			delete(m.jobs, task.UID())
+		}
 	}
 }

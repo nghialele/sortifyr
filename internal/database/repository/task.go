@@ -54,14 +54,21 @@ func (t *Task) GetRunFiltered(ctx context.Context, filter model.TaskFilter) ([]*
 		result = *filter.Result
 	}
 
+	recurring := false
+	if filter.Recurring != nil {
+		recurring = *filter.Recurring
+	}
+
 	params := sqlc.TaskGetFilteredParams{
-		Column1:       int32(filter.UserID),
-		Uid:           filter.TaskUID,
-		FilterTaskUid: filter.TaskUID != "",
-		Result:        sqlc.TaskResult(result),
-		FilterResult:  filter.Result != nil,
-		Limit:         int32(filter.Limit),
-		Offset:        int32(filter.Offset),
+		Column1:         int32(filter.UserID),
+		Uid:             filter.TaskUID,
+		FilterTaskUid:   filter.TaskUID != "",
+		Result:          sqlc.TaskResult(result),
+		FilterResult:    filter.Result != nil,
+		Recurring:       recurring,
+		FilterRecurring: filter.Recurring != nil,
+		Limit:           int32(filter.Limit),
+		Offset:          int32(filter.Offset),
 	}
 
 	tasks, err := t.repo.queries(ctx).TaskGetFiltered(ctx, params)
@@ -127,9 +134,10 @@ func (t *Task) CreateRun(ctx context.Context, task *model.Task) error {
 
 func (t *Task) Update(ctx context.Context, task model.Task) error {
 	if err := t.repo.queries(ctx).TaskUpdate(ctx, sqlc.TaskUpdateParams{
-		Uid:    task.UID,
-		Name:   task.Name,
-		Active: task.Active,
+		Uid:       task.UID,
+		Name:      toString(task.Name),
+		Active:    toBool(task.Active),
+		Recurring: toBool(task.Recurring),
 	}); err != nil {
 		return fmt.Errorf("update task %+v | %w", task, err)
 	}
