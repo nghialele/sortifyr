@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/internal/database/repository"
 	"github.com/topvennie/sortifyr/internal/server/dto"
 	"github.com/topvennie/sortifyr/internal/spotify"
+	"github.com/topvennie/sortifyr/internal/task"
 	"github.com/topvennie/sortifyr/pkg/storage"
 	"github.com/topvennie/sortifyr/pkg/utils"
 	"go.uber.org/zap"
@@ -108,6 +110,9 @@ func (p *Playlist) RemoveDuplicates(ctx context.Context, userID int) error {
 	}
 
 	if err := spotify.C.TaskPlaylistDuplicate(ctx, *user); err != nil {
+		if errors.Is(err, task.ErrTaskExists) {
+			return fiber.NewError(fiber.StatusBadRequest, "Task is already running")
+		}
 		zap.S().Error(err)
 		return fiber.ErrInternalServerError
 	}

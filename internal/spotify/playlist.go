@@ -185,7 +185,6 @@ func (c *client) playlistRemoveDuplicates(ctx context.Context, user model.User) 
 	// That's why we first need to make an API call to delete them
 	// Which deleted all instances
 	// And then add them back so that we dont lose them.
-
 	playlists, err := c.playlist.GetDuplicateTracksByUser(ctx, user.ID)
 	if err != nil {
 		return err

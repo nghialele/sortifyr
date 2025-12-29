@@ -182,7 +182,7 @@ export const LinkAnchorProvider = ({ children }: PropsWithChildren) => {
     }
 
     await saveLinks.mutateAsync(result.data, {
-      onSuccess: () => notifications.show({ variant: "success", message: "Links synced" })
+      onSuccess: () => notifications.show({ message: "Links synced" })
     })
   }, [connections, saveLinks])
 

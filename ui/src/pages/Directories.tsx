@@ -117,7 +117,7 @@ const DirectoriesInner = () => {
 
   const handleSave = () => {
     save.mutate(roots, {
-      onSuccess: () => notifications.show({ variant: "success", message: "Directories synced" }),
+      onSuccess: () => notifications.show({ message: "Directories synced" }),
       onSettled: () => closeSave()
     })
   }

@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { convertPlaylistDuplicates, convertPlaylists, convertPlaylistUnplayables } from "../types/playlist"
 import { STALE_TIME } from "../types/staletime"
 import { apiGet, apiPost } from "./query"
@@ -33,9 +33,13 @@ export const usePlaylistGetUnplayables = () => {
 }
 
 export const usePlaylistRemoveDuplicates = () => {
-  // No need to invalidate queries as the task will probably takes a while and is done in the background
+  const queryClient = useQueryClient()
+
   return useMutation({
     mutationFn: () => apiPost(`${ENDPOINT}/duplicate`),
-    throwOnError: true,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["task"] })
+      queryClient.invalidateQueries({ queryKey: ["task_history"] })
+    },
   })
 }

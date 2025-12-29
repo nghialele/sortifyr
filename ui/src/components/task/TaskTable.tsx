@@ -22,7 +22,7 @@ export const TaskTable = ({ tasks, isLoading }: Props) => {
 
   const handleClick = (task: Task) => {
     taskRun.mutate(task, {
-      onSuccess: () => notifications.show({ variant: "success", title: task.name, message: "Started" })
+      onSuccess: () => notifications.show({ title: task.name, message: "Started" })
     })
   }
 
@@ -42,7 +42,7 @@ export const TaskTable = ({ tasks, isLoading }: Props) => {
         },
         { accessor: "name", title: "Task" },
         { accessor: "lastRun", render: ({ lastRun }) => <p className="text-muted">{lastRun ? formatDistanceToNow(lastRun, { addSuffix: true }) : ""}</p> },
-        { accessor: "nextRun", render: ({ nextRun }) => <p className="text-muted">{formatDistanceToNow(nextRun, { addSuffix: true })}</p> },
+        { accessor: "nextRun", render: ({ nextRun }) => <p className="text-muted">{nextRun ? formatDistanceToNow(nextRun, { addSuffix: true }) : ""}</p> },
         { accessor: "interval", render: ({ interval }) => <p className="text-muted">{interval ? formatInterval(interval) : ""}</p> },
         {
           accessor: "lastStatus",

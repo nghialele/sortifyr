@@ -97,7 +97,7 @@ export const PlaylistOverview = () => {
       <Group gap="xs">
         <p className="text-sm text-muted">{`${playlists.length} playlists`}</p>
         <Pill bg="secondary.1">{`${trackAmount} tracks`}</Pill>
-        {task && <p className="ml-auto text-sm text-muted">{`Next sync in ${formatDistanceToNow(task.nextRun)}`}</p>}
+        {task && <p className="ml-auto text-sm text-muted">{`Next sync in ${formatDistanceToNow(task.nextRun!)}`}</p>}
       </Group>
       {view === "table" ? (
         <PlaylistTable

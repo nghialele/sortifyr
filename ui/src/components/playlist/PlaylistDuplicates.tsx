@@ -10,6 +10,7 @@ import { SectionTitle } from "../atoms/Page"
 import { Confirm } from "../molecules/Confirm"
 import { Table } from "../molecules/Table"
 import { PlaylistCover } from "./PlaylistCover"
+import { getErrorMessage } from "@/lib/utils"
 
 export const PlaylistDuplicates = () => {
   const { data: playlists, isLoading } = usePlaylistGetDuplicates()
@@ -27,8 +28,12 @@ export const PlaylistDuplicates = () => {
   const [opened, { open, close }] = useDisclosure()
 
   const handleRemove = () => {
-    removeDuplicates.mutate(undefined, {
-      onSuccess: () => notifications.show({ variant: "success", message: "Duplicates are getting removed. Come back later to see the result", }),
+    removeDuplicates.mutateAsync(undefined, {
+      onSuccess: () => notifications.show({ message: "Duplicates are getting removed. Go to the task page to see the result.", }),
+      onError: async (error) => {
+        const msg = await getErrorMessage(error)
+        notifications.show({ color: "red", message: msg })
+      },
       onSettled: () => close(),
     })
   }
@@ -45,7 +50,6 @@ export const PlaylistDuplicates = () => {
         </Button>
       </Group>
       <Table
-        idAccessor="id"
         columns={[
           {
             accessor: "id",
@@ -63,7 +67,7 @@ export const PlaylistDuplicates = () => {
             render: ({ duplicates }) => <p>{duplicates.length}</p>
           },
           {
-            accessor: "duplicates",
+            accessor: "duplicatesTotal",
             title: "Total duplicates",
             sortable: true,
             render: ({ duplicates }) => <p>{duplicates.reduce((acc, curr) => acc + curr.amount, 0)}</p>
@@ -96,7 +100,7 @@ export const PlaylistDuplicates = () => {
         onClose={close}
         modalTitle="Duplicates"
         title="Remove Duplicates"
-        description="Are you sure you want to remove all duplicates?"
+        description={`Are you sure you want to remove all duplicates?\nAfter it's finished it'll take a couple of minutes before the changes come through.`}
         onConfirm={handleRemove}
       />
     </>

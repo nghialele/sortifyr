@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
   const logout = useCallback(() => {
     logoutMutation(undefined, {
-      onSuccess: () => notifications.show({ variant: "success", message: "Logged out" }),
+      onSuccess: () => notifications.show({ message: "Logged out" }),
       onError: (err) => { throw new Error(`Logout failed ${err}`) },
       onSettled: () => setUser(null),
     });

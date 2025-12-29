@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { format } from "date-fns";
 import { twMerge } from "tailwind-merge";
 import { v4 as uuid } from 'uuid';
+import { isResponseNot200Error } from "./api/query";
 
 export function camelToSnake(obj: unknown): unknown {
   if (obj === null || obj === undefined) {
@@ -70,4 +71,10 @@ export const scrollTo = (id: string) => {
   if (!element) return
 
   element.scrollIntoView({ behavior: "smooth" })
+}
+
+export async function getErrorMessage(err: Error) {
+  if (isResponseNot200Error(err)) return await err.response.text()
+
+  return err.message
 }
