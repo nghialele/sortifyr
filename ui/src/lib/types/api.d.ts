@@ -46,7 +46,7 @@ export namespace API {
     uid: string;
     name: string;
     status: string;
-    next_run: string;
+    next_run?: string;
     last_status?: string;
     last_run?: string;
     last_message?: string;

@@ -14,7 +14,7 @@ export interface Task {
   uid: string;
   name: string;
   status: TaskStatus;
-  nextRun: Date;
+  nextRun?: Date;
   lastStatus?: TaskResult;
   lastRun?: Date;
   lastMessage?: string;
@@ -44,7 +44,7 @@ export const convertTask = (task: API.Task): Task => {
     uid: task.uid,
     name: task.name,
     status: task.status as TaskStatus,
-    nextRun: new Date(task.next_run),
+    nextRun: task.next_run ? new Date(task.next_run) : undefined,
     lastStatus: task.last_status ? task.last_status as TaskResult : undefined,
     lastRun: task.last_run ? new Date(task.last_run) : undefined,
     lastMessage: task.last_message,

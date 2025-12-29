@@ -3,6 +3,7 @@ package task
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/topvennie/sortifyr/internal/database/model"
@@ -10,7 +11,10 @@ import (
 	"go.uber.org/zap"
 )
 
-var IntervalOnce = time.Duration(0)
+var (
+	IntervalOnce  = time.Duration(0)
+	ErrTaskExists = errors.New("task already exists")
+)
 
 // Init intializes the global task manager instance
 func Init(repo repository.Repository) error {
@@ -86,11 +90,11 @@ type internalTask struct {
 // Interface compliance
 var _ Task = (*internalTask)(nil)
 
-// NewTaskRecurring creates a new task
+// NewTask creates a new task
 // It supports an optional context, if none is given the background context is used
 // Logs (info level) when a task starts and ends
 // Logs (error level) any error that occurs during the task execution
-func NewTaskRecurring(uid, name string, interval time.Duration, fn func(context.Context, []model.User) []TaskResult, ctx ...context.Context) Task {
+func NewTask(uid, name string, interval time.Duration, fn func(context.Context, []model.User) []TaskResult, ctx ...context.Context) Task {
 	c := context.Background()
 	if len(ctx) > 0 {
 		c = ctx[0]

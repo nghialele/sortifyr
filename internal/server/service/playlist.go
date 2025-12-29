@@ -107,11 +107,10 @@ func (p *Playlist) RemoveDuplicates(ctx context.Context, userID int) error {
 		return fiber.ErrUnauthorized
 	}
 
-	go func() {
-		if err := spotify.C.PlaylistRemoveDuplicates(context.Background(), *user); err != nil {
-			zap.S().Error(err)
-		}
-	}()
+	if err := spotify.C.TaskPlaylistDuplicate(ctx, *user); err != nil {
+		zap.S().Error(err)
+		return fiber.ErrInternalServerError
+	}
 
 	return nil
 }

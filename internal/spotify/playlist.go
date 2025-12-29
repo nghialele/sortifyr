@@ -180,7 +180,7 @@ func (c *client) playlistCoverSync(ctx context.Context, user model.User) error {
 	}))
 }
 
-func (c *client) PlaylistRemoveDuplicates(ctx context.Context, user model.User) error {
+func (c *client) playlistRemoveDuplicates(ctx context.Context, user model.User) error {
 	// Spotify's API will remove every instance of a track in a playlist
 	// That's why we first need to make an API call to delete them
 	// Which deleted all instances

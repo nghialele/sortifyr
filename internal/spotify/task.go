@@ -10,18 +10,44 @@ import (
 )
 
 const (
-	taskArtistUID   = "task-artist"
-	taskAlbumUID    = "task-album"
-	taskHistoryUID  = "task-history"
-	taskLinkUID     = "task-link"
-	taskPlaylistUID = "task-playlist"
-	taskShowUID     = "task-show"
-	taskTrackUID    = "task-track"
-	taskUserUID     = "task-user"
+	taskArtistUID            = "task-artist"
+	taskAlbumUID             = "task-album"
+	taskHistoryUID           = "task-history"
+	taskLinkUID              = "task-link"
+	taskPlaylistUID          = "task-playlist"
+	taskPlaylistDuplicateUID = "task-playlist-duplicate"
+	taskShowUID              = "task-show"
+	taskTrackUID             = "task-track"
+	taskUserUID              = "task-user"
 )
 
-func (c *client) taskRegister() error {
-	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
+func (c *client) TaskPlaylistDuplicate(ctx context.Context, user model.User) error {
+	if err := task.Manager.Add(ctx, task.NewTask(
+		taskPlaylistDuplicateUID,
+		"Playlist Duplicates Remove",
+		task.IntervalOnce,
+		func(ctx context.Context, _ []model.User) []task.TaskResult {
+			results := []task.TaskResult{{
+				User:    user,
+				Message: "",
+				Error:   nil,
+			}}
+
+			if err := c.playlistRemoveDuplicates(ctx, user); err != nil {
+				results[0].Error = err
+			}
+
+			return results
+		},
+	)); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *client) taskRegister(ctx context.Context) error {
+	if err := task.Manager.Add(ctx, task.NewTask(
 		taskPlaylistUID,
 		"Playlist",
 		config.GetDefaultDuration("task.playlist_s", 60*60),
@@ -30,7 +56,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
+	if err := task.Manager.Add(ctx, task.NewTask(
 		taskAlbumUID,
 		"Album",
 		config.GetDefaultDuration("task.album_s", 60*60),
@@ -39,7 +65,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
+	if err := task.Manager.Add(ctx, task.NewTask(
 		taskShowUID,
 		"Show",
 		config.GetDefaultDuration("task.show_s", 12*60*60),
@@ -48,7 +74,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
+	if err := task.Manager.Add(ctx, task.NewTask(
 		taskTrackUID,
 		"Track",
 		config.GetDefaultDuration("task.track_s", 5*60),
@@ -57,7 +83,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
+	if err := task.Manager.Add(ctx, task.NewTask(
 		taskArtistUID,
 		"Artist",
 		config.GetDefaultDuration("task.artist_s", 5*60),
@@ -66,7 +92,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
+	if err := task.Manager.Add(ctx, task.NewTask(
 		taskUserUID,
 		"User",
 		config.GetDefaultDuration("task.user_s", 6*60*60),
@@ -75,7 +101,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
+	if err := task.Manager.Add(ctx, task.NewTask(
 		taskHistoryUID,
 		"Current",
 		config.GetDefaultDuration("task.history_s", 15),
@@ -84,7 +110,7 @@ func (c *client) taskRegister() error {
 		return err
 	}
 
-	if err := task.Manager.Add(context.Background(), task.NewTaskRecurring(
+	if err := task.Manager.Add(ctx, task.NewTask(
 		taskLinkUID,
 		"Link",
 		config.GetDefaultDuration("task.link_s", 12*60*60),

@@ -18,7 +18,7 @@ WHERE
   (t.uid = $2 OR NOT @filter_task_uid) AND
   (r.result = $3 OR NOT @filter_result) AND
   (t.recurring = $4 OR NOT @filter_recurring) AND
-  t.active
+  (t.active OR NOT t.recurring)
 ORDER BY r.run_at DESC
 LIMIT $5 OFFSET $6;
 

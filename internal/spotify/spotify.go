@@ -60,7 +60,7 @@ func Init(repo repository.Repository) error {
 		user:      *repo.NewUser(),
 	}
 
-	if err := C.taskRegister(); err != nil {
+	if err := C.taskRegister(context.Background()); err != nil {
 		return err
 	}
 

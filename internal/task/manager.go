@@ -73,7 +73,7 @@ func (m *manager) Add(ctx context.Context, newTask Task) error {
 	zap.S().Infof("Adding task: %s", newTask.Name())
 
 	if _, ok := m.jobs[newTask.UID()]; ok {
-		return fmt.Errorf("task %s already exists (uid: %s)", newTask.Name(), newTask.UID())
+		return ErrTaskExists
 	}
 
 	isRecurring := newTask.Interval() != IntervalOnce
@@ -86,7 +86,7 @@ func (m *manager) Add(ctx context.Context, newTask Task) error {
 		// Pre-existing task
 		// Update it
 		task.Name = newTask.Name()
-		task.Active = true
+		task.Active = isRecurring
 		if err := m.repoTask.Update(ctx, *task); err != nil {
 			return err
 		}
@@ -298,6 +298,7 @@ func (m *manager) wrap(task Task) func(context.Context) {
 			m.jobs[task.UID()] = info
 		} else {
 			delete(m.jobs, task.UID())
+			m.scheduler.RemoveByTags(task.UID())
 		}
 	}
 }

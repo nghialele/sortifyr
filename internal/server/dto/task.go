@@ -38,7 +38,7 @@ type Task struct {
 	TaskUID     string           `json:"uid"`
 	Name        string           `json:"name"`
 	Status      task.Status      `json:"status"`
-	NextRun     time.Time        `json:"next_run"`
+	NextRun     time.Time        `json:"next_run,omitzero"`
 	LastStatus  model.TaskResult `json:"last_status,omitempty"`
 	LastRun     *time.Time       `json:"last_run,omitzero"`
 	LastMessage string           `json:"last_message,omitempty"`

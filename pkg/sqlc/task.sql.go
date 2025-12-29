@@ -60,7 +60,7 @@ WHERE
   (t.uid = $2 OR NOT $7) AND
   (r.result = $3 OR NOT $8) AND
   (t.recurring = $4 OR NOT $9) AND
-  t.active
+  (t.active OR NOT t.recurring)
 ORDER BY r.run_at DESC
 LIMIT $5 OFFSET $6
 `
