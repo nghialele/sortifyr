@@ -9,6 +9,7 @@ import { Home } from "./pages/Home";
 import { Links } from "./pages/Links";
 import { Tasks } from "./pages/Tasks";
 import { Tracks } from "./pages/Tracks";
+import { Settings } from "./pages/Settings";
 
 const root = createRootRouteWithContext()({
   component: App,
@@ -56,6 +57,12 @@ const history = createRoute({
   component: Tracks,
 })
 
+const setting = createRoute({
+  getParentRoute: () => index,
+  path: "/setting",
+  component: Settings,
+})
+
 const routeTree = root.addChildren([
   index.addChildren([
     home,
@@ -64,6 +71,7 @@ const routeTree = root.addChildren([
     link,
     task,
     history,
+    setting,
   ]),
 ])
 

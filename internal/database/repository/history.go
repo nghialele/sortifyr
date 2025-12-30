@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/topvennie/sortifyr/internal/database/model"
 	"github.com/topvennie/sortifyr/pkg/sqlc"
 	"github.com/topvennie/sortifyr/pkg/utils"
@@ -73,6 +75,39 @@ func (h *History) Create(ctx context.Context, history *model.History) error {
 	}
 
 	history.ID = int(id)
+
+	return nil
+}
+
+func (h *History) CreateBatch(ctx context.Context, histories []model.History) error {
+	userIDs := make([]int32, 0, len(histories))
+	trackIDs := make([]int32, 0, len(histories))
+	playedAts := make([]pgtype.Timestamptz, 0, len(histories))
+
+	for i := range histories {
+		userIDs = append(userIDs, int32(histories[i].UserID))
+		trackIDs = append(trackIDs, int32(histories[i].TrackID))
+		playedAts = append(playedAts, toTime(histories[i].PlayedAt))
+	}
+
+	if err := h.repo.queries(ctx).HistoryCreateBatch(ctx, sqlc.HistoryCreateBatchParams{
+		Column1: userIDs,
+		Column2: trackIDs,
+		Column3: playedAts,
+	}); err != nil {
+		return fmt.Errorf("create history batch %w", err)
+	}
+
+	return nil
+}
+
+func (h *History) DeleteOlder(ctx context.Context, userID int, playedAt time.Time) error {
+	if err := h.repo.queries(ctx).HistoryDeleteUserOlder(ctx, sqlc.HistoryDeleteUserOlderParams{
+		UserID:   int32(userID),
+		PlayedAt: toTime(playedAt),
+	}); err != nil {
+		return fmt.Errorf("delete history for user %d by time %s", userID, playedAt)
+	}
 
 	return nil
 }

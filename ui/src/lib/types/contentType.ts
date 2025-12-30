@@ -5,4 +5,5 @@ export namespace CONTENT_TYPE {
   export const PNG = "image/png"
   export const WEBP = "image/webp"
   export const PHOTO = "image/png,image/jpeg,image/webp"
+  export const ZIP = "application/zip,application/octet-stream"
 }

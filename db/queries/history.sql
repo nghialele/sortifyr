@@ -20,3 +20,15 @@ LIMIT $2 OFFSET $3;
 INSERT INTO history (user_id, track_id, played_at, album_id, artist_id, playlist_id, show_id)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING id;
+
+-- name: HistoryCreateBatch :exec
+INSERT INTO history (user_id, track_id, played_at)
+VALUES (
+  UNNEST($1::int[]),
+  UNNEST($2::int[]),
+  UNNEST($3::timestamptz[])
+);
+
+-- name: HistoryDeleteUserOlder :exec
+DELETE FROM history
+WHERE user_id = $1 AND played_at < $2;

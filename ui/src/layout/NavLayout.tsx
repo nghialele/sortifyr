@@ -6,7 +6,7 @@ import { ActionIcon, AppShell, Burger, Button, Divider, Group, ScrollArea, Stack
 import { useDisclosure } from "@mantine/hooks";
 import { LinkProps } from "@tanstack/react-router";
 import { ComponentProps, ReactNode, useState } from "react";
-import { LuClock, LuFolderTree, LuLink2, LuListMusic, LuMusic, LuMusic3, LuTriangle } from "react-icons/lu";
+import { LuClock, LuFolderTree, LuLink2, LuListMusic, LuMusic, LuMusic3, LuSettings, LuTriangle } from "react-icons/lu";
 
 type Props = ComponentProps<"div">
 
@@ -41,7 +41,12 @@ const routes: Route[] = [
     title: "Background Tasks",
     icon: <LuClock className="size-5" />,
     link: { to: "/task" },
-  }
+  },
+  {
+    title: "Settings",
+    icon: <LuSettings className="size-5" />,
+    link: { to: "/setting" },
+  },
 ];
 
 const NavLink = ({ route, close }: { route: Route, close?: () => void }) => {

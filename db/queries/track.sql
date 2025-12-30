@@ -7,6 +7,11 @@ SELECT *
 FROM tracks
 WHERE spotify_id = $1;
 
+-- name: TrackGetAllBySpotify :many
+SELECT *
+FROM tracks
+WHERE spotify_id = ANY($1::text[]);
+
 -- name: TrackGetByName :many
 SELECT *
 FROM tracks

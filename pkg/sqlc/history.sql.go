@@ -42,6 +42,41 @@ func (q *Queries) HistoryCreate(ctx context.Context, arg HistoryCreateParams) (i
 	return id, err
 }
 
+const historyCreateBatch = `-- name: HistoryCreateBatch :exec
+INSERT INTO history (user_id, track_id, played_at)
+VALUES (
+  UNNEST($1::int[]),
+  UNNEST($2::int[]),
+  UNNEST($3::timestamptz[])
+)
+`
+
+type HistoryCreateBatchParams struct {
+	Column1 []int32
+	Column2 []int32
+	Column3 []pgtype.Timestamptz
+}
+
+func (q *Queries) HistoryCreateBatch(ctx context.Context, arg HistoryCreateBatchParams) error {
+	_, err := q.db.Exec(ctx, historyCreateBatch, arg.Column1, arg.Column2, arg.Column3)
+	return err
+}
+
+const historyDeleteUserOlder = `-- name: HistoryDeleteUserOlder :exec
+DELETE FROM history
+WHERE user_id = $1 AND played_at < $2
+`
+
+type HistoryDeleteUserOlderParams struct {
+	UserID   int32
+	PlayedAt pgtype.Timestamptz
+}
+
+func (q *Queries) HistoryDeleteUserOlder(ctx context.Context, arg HistoryDeleteUserOlderParams) error {
+	_, err := q.db.Exec(ctx, historyDeleteUserOlder, arg.UserID, arg.PlayedAt)
+	return err
+}
+
 const historyGetLatestByUser = `-- name: HistoryGetLatestByUser :one
 SELECT id, user_id, track_id, played_at, album_id, artist_id, playlist_id, show_id
 FROM history
