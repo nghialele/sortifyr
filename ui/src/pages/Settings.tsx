@@ -47,7 +47,7 @@ export const Settings = () => {
           <FileButton onChange={handleExport} accept={CONTENT_TYPE.ZIP}>
             {(props) => (
               <div>
-                <Button leftSection={<LuCloudUpload />} radius="lg" {...props}>Import spotify data</Button>
+                <Button leftSection={<LuCloudUpload />} radius="lg" {...props}>Upload Spotify data</Button>
               </div>
             )}
           </FileButton>
