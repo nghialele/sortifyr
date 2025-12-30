@@ -48,6 +48,8 @@ A web application to help organize and automate your Spotify playlists.
   A track is only counted as played after you listened to it for at least 20 seconds, however
   due to the internal workings of the application it can be up to 40 seconds before a track is considered played.
 
+  In the settings page you can upload all your historic Spotify data.
+
   ![Track history](./screenshots/track_history.png)
 </details>
 
@@ -149,6 +151,14 @@ A web application to help organize and automate your Spotify playlists.
 </details>
 
 <details>
+  <summary>Can everyone log in to the application?</summary>
+
+  No.
+  By default when you create a Spotify Developer App you give only yourself access to the application.
+  If you want to give someone else access to the application then you need to add them in the dashboard of your Spotify App.
+</details>
+
+<details>
   <summary>What's the worst that can happen to my playlists?</summary>
 
   The absolute worst situation I can think of is that you misconfigure a link.
@@ -160,6 +170,12 @@ A web application to help organize and automate your Spotify playlists.
 
   Changes made to playlists in Spotify are not immediately reflected in the web API.
   It can take up to 10 minutes before the API returns the updated data.
+</details>
+
+<details>
+  <summary>Can multiple people use Sortifyr at the same time?</summary>
+
+  Yes as long as you add the users to the Spotify Developer App.
 </details>
 
 ## Spotify App setup
@@ -183,6 +199,18 @@ This web application requires you to have a Spotify Developer app, which provide
 > [!WARNING]
 > By default only the owner of the developer app can login.
 > You can add up to 25 extra users in the Spotify app dashboard.
+
+## Import historic Spotify data
+
+Sortifyr works best when it has some listening data.
+As the application is running it keeps track of all the data it needs however you can already fill it with all your historic listening data.
+
+To get your history
+
+1. Go to the [Spotify account website](https://www.spotify.com/account/overview/)
+2. Go to account privacy and request your extended streaming history.
+3. When Spotify emails you the download link, save the `.zip` file to your computer (can take up to 30 days however it only took one day for me).
+4. Go the your deployed Sortifyr instance, navigate to the settings tab and upload your Spotify listening data.
 
 ## Production Deployment
 
