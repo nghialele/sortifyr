@@ -5,6 +5,7 @@ A web application to help organize and automate your Spotify playlists.
 - Detect duplicate and unavailable tracks in playlists
 - Keep track of your all time listening history and playlist changes
 - Create one-way synchronized playlists links
+- Create and optionally automatically maintain playlists
 
 ## Features
 
@@ -128,6 +129,29 @@ A web application to help organize and automate your Spotify playlists.
   ![Link](./screenshots/link.png)
 </details>
 
+### Generators
+
+<details>
+  <summary>Generators</summary>
+
+  Generators let you create playlists from your listening history using configurable rules.
+
+  A generator defines _how tracks are selected_ — for example:
+  most-played tracks in a time window, forgotten favorites, or tracks that used to be on repeat.
+
+  Once created, a generator can:
+    - Generate a one-time playlist preview
+    - Create a Spotify playlist
+    - Keep that playlist automatically updated on a schedule
+
+  Generators do not discover new music. They only work with tracks you have listened to before.
+
+  A common example is a playlist containing your top 50 tracks from the last 3 months, refreshed daily so it stays in sync with your listening habits.
+
+  ![Generator Overview](./screenshots/generator_overview.png)
+  ![Generator Create](./screenshots/generator_create.png)
+</details>
+
 ## FAQ
 
 <details>
@@ -136,7 +160,7 @@ A web application to help organize and automate your Spotify playlists.
   Only if configured to do so.
   By default it only tracks your Spotify data.
 
-  However when starting a duplicate removal task or setting up links then it will modify playlists.
+  However when starting a duplicate removal task, setting up links or creating generators then it will modify playlists.
 </details>
 
 <details>
@@ -147,7 +171,7 @@ A web application to help organize and automate your Spotify playlists.
 
   Spotify has very clear [rules](https://developer.spotify.com/terms) on what is allowed.
   If you have a reason to believe this project breaches any them
-  please contact me personally or by creating an issue.
+  please contact me personally or create an issue.
 </details>
 
 <details>
@@ -176,6 +200,15 @@ A web application to help organize and automate your Spotify playlists.
   <summary>Can multiple people use Sortifyr at the same time?</summary>
 
   Yes as long as you add the users to the Spotify Developer App.
+</details>
+
+<details>
+  <summary>Can I modify generated playlists?</summary>
+
+  In all cases you can change the name, description and move the playlist around (place it in a directory, ...).
+  However if you add or remove tracks manually then the changes will be reversed when the generator refreshes.
+
+  If you want to exclude a specific track then you can do that by editing the generator.
 </details>
 
 ## Spotify App setup
