@@ -98,9 +98,10 @@ func (t *Task) GetRunLastAllByUser(ctx context.Context, userID int) ([]*model.Ta
 
 func (t *Task) Create(ctx context.Context, task model.Task) error {
 	if err := t.repo.queries(ctx).TaskCreate(ctx, sqlc.TaskCreateParams{
-		Uid:    task.UID,
-		Name:   task.Name,
-		Active: task.Active,
+		Uid:       task.UID,
+		Name:      task.Name,
+		Active:    task.Active,
+		Recurring: task.Recurring,
 	}); err != nil {
 		return fmt.Errorf("create task %+v | %w", t, err)
 	}
