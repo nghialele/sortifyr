@@ -60,10 +60,9 @@ export function capitalize(text: string) {
   return text[0].toUpperCase() + text.slice(1)
 }
 
-export function getBuildTime() {
-  const buildTime = import.meta.env.VITE_BUILD_TIME as string | "";
-
-  return buildTime ? formatDate(new Date(buildTime)) : "Development"
+export function getVersion() {
+  const version = import.meta.env.VITE_APP_VERSION;
+  return version ?? "Development"
 }
 
 export const scrollTo = (id: string) => {

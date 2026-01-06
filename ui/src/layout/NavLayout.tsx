@@ -2,7 +2,7 @@ import { Avatar } from "@/components/atoms/Avatar";
 import { Button } from "@/components/atoms/Button";
 import { LinkButton } from "@/components/atoms/LinkButton";
 import { useAuth } from "@/lib/hooks/useAuth";
-import { cn, getBuildTime } from "@/lib/utils";
+import { cn, getVersion } from "@/lib/utils";
 import { ActionIcon, AppShell, Burger, Divider, Group, ScrollArea, Stack } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { LinkProps } from "@tanstack/react-router";
@@ -81,7 +81,7 @@ export const NavLayout = ({ className, children, ...props }: Props) => {
 
   const [userExpanded, setUserExpanded] = useState(false)
 
-  const buildTime = getBuildTime()
+  const version = getVersion()
 
   return (
     <AppShell
@@ -123,7 +123,7 @@ export const NavLayout = ({ className, children, ...props }: Props) => {
                   Log out
                 </Button>
                 <Divider />
-                <p className="text-sm text-muted">{`Built: ${buildTime}`}</p>
+                <p className="text-sm text-muted">{version}</p>
               </>
             )}
           </Stack>
