@@ -8,7 +8,6 @@ import checker from 'vite-plugin-checker';
 export default defineConfig(() => {
   return {
     build: {
-      outDir: '../public',
       emptyOutDir: true,
       sourcemap: true,
     },

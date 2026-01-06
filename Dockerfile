@@ -1,59 +1,51 @@
-# First stage: Get Golang image from DockerHub.
+# Stage 1: Build backend
 FROM golang:1.25.1-alpine3.22 AS backend-builder
-
-# Set our working directory for this stage.
 WORKDIR /app
 
-RUN apk add --no-cache gcc musl-dev
+RUN apk add --no-cache gcc musl-dev libwebp-dev
 
-# Copy all of our files.
+COPY go.mod go.sum ./
+RUN go mod download
+
 COPY . .
 
-# Get and install all dependencies.
-RUN CGO_ENABLED=1 GOOS=linux go build -o server ./cmd/api/main.go
-RUN CGO_ENABLED=0 GOOS=linux go build -o migrate ./migrate.go
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o server ./cmd/api/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o migrate ./migrate.go
 
-FROM node:24.8.0-alpine3.22 AS base-frontend
+# Stage 2: Build frontend
+FROM node:24.8.0-alpine3.22 AS frontend-builder
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-
-# Get corepack
-RUN npm i -g corepack@latest
 RUN corepack enable
-COPY ./ui /frontend/ui
-WORKDIR /frontend
-
-FROM base-frontend AS frontend-prod-deps
-WORKDIR /frontend/ui
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --prod --frozen-lockfile
-
-FROM base-frontend AS frontend-build
 
 WORKDIR /frontend/ui
+
+COPY ./ui/package.json ./ui/pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+
+COPY ./ui .
 
 ARG APP_VERSION
-ENV VITE_APP_VERSION=$APP_VERSION
 
+ENV VITE_APP_VERSION=$APP_VERSION
 ENV CI=true
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
+
 RUN pnpm run build
 
-# Last stage: discard everything except our executables.
-FROM alpine:latest AS prod
-
-# Set our next working directory.
+# Stage 3: Combine
+FROM alpine:3.22 AS prod
 WORKDIR /app
 
-RUN apk add --no-cache gcc musl-dev
+RUN apk add --no-cache libwebp ca-certificates tzdata
 
 # Copy our executable and our built React application.
 COPY --from=backend-builder /app/server .
 COPY --from=backend-builder /app/migrate .
 COPY --from=backend-builder /app/config/production.toml ./config/production.toml
-COPY --from=frontend-build /frontend/public ./public
+COPY --from=frontend-builder /frontend/ui/dist ./public
 
 ENV APP_ENV=production
 
-# Declare entrypoints and activation commands.
 EXPOSE 8000
+
 ENTRYPOINT ["/bin/sh", "-c" , "./migrate && ./server"]

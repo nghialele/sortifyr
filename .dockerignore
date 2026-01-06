@@ -1,8 +1,7 @@
-.git
-/public/
-node_modules/
-.dockerignore
-.gitignore
-Dockerfile
-README.md
+.git/
+.githooks/
+.github/
+main
+migrate
 screenshots/
+tmp/
