@@ -14,10 +14,10 @@ A web application to help organize and automate your Spotify playlists.
 <details>
   <summary>Duplicate tracks</summary>
 
-  Find any duplicate track in a playlist.
-  You can trigger an automatic deletion of any duplicate entries.
+Find any duplicate track in a playlist.
+You can trigger an automatic deletion of any duplicate entries.
 
-  ![Playlist duplicate tracks](./screenshots/playlist_duplicate.png)
+![Playlist duplicate tracks](./screenshots/playlist_duplicate.png)
 
 > [!NOTE]
 > Due to Spotify API limitations this will first delete every instance
@@ -27,15 +27,15 @@ A web application to help organize and automate your Spotify playlists.
 <details>
   <summary>Unplayable tracks</summary>
 
-  Find any track that is no longer playable.
-  This can happen because of various reasons, for example licensing issues.
+Find any track that is no longer playable.
+This can happen because of various reasons, for example licensing issues.
 
-  These tracks are recognizable by being grayed out.
-  Unfortunately due to Spotify API limitations these tracks cannot be deleted with API calls.
-  You'll have to delete them manually. The easiest way to find them is by sorting a playlist by artist.
-  They will appear at the top.
+These tracks are recognizable by being grayed out.
+Unfortunately due to Spotify API limitations these tracks cannot be deleted with API calls.
+You'll have to delete them manually. The easiest way to find them is by sorting a playlist by artist.
+They will appear at the top.
 
-  ![Playlist unplayable tracks](./screenshots/playlist_unplayable.png)
+![Playlist unplayable tracks](./screenshots/playlist_unplayable.png)
 </details>
 
 ### Tracks
@@ -43,23 +43,35 @@ A web application to help organize and automate your Spotify playlists.
 <details>
   <summary>History</summary>
 
-  An overview of your history.
-  It will show any track that you listened to or was played in a jam that you were a part of.
+An overview of your history.
+It will show any track that you listened to or was played in a jam that you were a part of.
 
-  Sortifyr will track all the data is needs in the background however it can not access any past data.
-  In the settings page you can find instructions how you can upload all your historic Spotify data.
+Sortifyr will track all the data is needs in the background however it can not access any past data.
+In the settings page you can find instructions how you can upload all your historic Spotify data.
 
-  It's highly recommended to do so.
+It's highly recommended to do so.
 
-  ![Track history](./screenshots/track_history.png)
+![Track history](./screenshots/track_history.png)
 </details>
 
 <details>
   <summary>Recently added / removed</summary>
 
-  An overview of recently added and removed tracks from any playlist.
+An overview of recently added and removed tracks from any playlist.
 
-  ![Track added](./screenshots/track_added.png)
+![Track added](./screenshots/track_added.png)
+</details>
+
+<details>
+  <summary>Import historic data</summary>
+
+Sortifyr becomes more accurate the more listening data it has.
+After you log in, it automatically starts tracking your listening activity.
+
+Spotify does not allow access to your historic listening data by default.
+However, you can request your data from Spotify and upload it to Sortifyr to enrich your history.
+
+Instructions are available in the README.
 </details>
 
 ### Directories
@@ -67,13 +79,13 @@ A web application to help organize and automate your Spotify playlists.
 <details>
   <summary>Directories</summary>
 
-  In the Spotify client you can organize your playlists in directories.
-  However Spotify doesn't expose this information in their API.
+In the Spotify client you can organize your playlists in directories.
+However Spotify doesn't expose this information in their API.
 
-  You can manually mirror your directory structure if desired.
-  The directory structure is used in other locations of the application.
+You can manually mirror your directory structure if desired.
+The directory structure is used in other locations of the application.
 
-  ![Directory](./screenshots/directory.png)
+![Directory](./screenshots/directory.png)
 </details>
 
 ### Links
@@ -81,52 +93,52 @@ A web application to help organize and automate your Spotify playlists.
 <details>
   <summary>Links</summary>
 
-  This is in all fairness a very niche feature.
-  But it is the reason why I started this project.
+This is in all fairness a very niche feature.
+But it is the reason why I started this project.
 
-  **Short**
+**Short**
 
-  Links allow you to one-way synchronize playlists / directories.
-  
-  **Long**
+Links allow you to one-way synchronize playlists / directories.
 
-  It's best explained with an example.
-  This is a simplified version of my personal Spotify organize structure
+**Long**
 
-  ```
-  Root/
-    All/
-      Genres/
-        Pop
-        Rock
-      Instrument/
-        Piano
-        Guitar
-    Good/
-      Genres/
-        Pop
-        Rock
-      Instrument/
-        Piano
-        Guitar
-  ```
+It's best explained with an example.
+This is a simplified version of my personal Spotify organize structure
 
-  As you can see there are 2 main directories, _All_ and _Good_.
-  For the most part they mirror each other.
+```
+Root/
+  All/
+    Genres/
+      Pop
+      Rock
+    Instrument/
+      Piano
+      Guitar
+  Good/
+    Genres/
+      Pop
+      Rock
+    Instrument/
+      Piano
+      Guitar
+```
 
-  What I generally do, is when I discover a new song that I like I add it to the right playlist in my _Good_ directory.
-  Whenever I play some music I shuffle a playlist inside the _Good_ directory.
-  When I eventually grow tired of the track I simply delete it.
+As you can see there are 2 main directories, _All_ and _Good_.
+For the most part they mirror each other.
 
-  However I don't want it to be gone forever!
-  That's where the _All_ directory comes in.
-  It contains any track I ever added to the _Good_ directory.
-  So when I delete something in the _Good_ directory, I can still find it in the _All_ directory.
+What I generally do, is when I discover a new song that I like I add it to the right playlist in my _Good_ directory.
+Whenever I play some music I shuffle a playlist inside the _Good_ directory.
+When I eventually grow tired of the track I simply delete it.
 
-  I'm using links to automatically add any track I add in _Good_ to the right playlist in _All_.
-  On top of that I have a master playlist that contains every track in any other playlist.
+However I don't want it to be gone forever!
+That's where the _All_ directory comes in.
+It contains any track I ever added to the _Good_ directory.
+So when I delete something in the _Good_ directory, I can still find it in the _All_ directory.
 
-  ![Link](./screenshots/link.png)
+I'm using links to automatically add any track I add in _Good_ to the right playlist in _All_.
+On top of that I have a master playlist that contains every track in any other playlist.
+
+![Link](./screenshots/link.png)
 </details>
 
 ### Generators
@@ -134,22 +146,23 @@ A web application to help organize and automate your Spotify playlists.
 <details>
   <summary>Generators</summary>
 
-  Generators let you create playlists from your listening history using configurable rules.
+Generators let you create playlists from your listening history using configurable rules.
 
-  A generator defines _how tracks are selected_ — for example:
-  most-played tracks in a time window, forgotten favorites, or tracks that used to be on repeat.
+A generator defines _how tracks are selected_, for example:
+most-played tracks in a time window, forgotten favorites, or tracks that used to be on repeat.
 
-  Once created, a generator can:
-    - Generate a one-time playlist preview
-    - Create a Spotify playlist
-    - Keep that playlist automatically updated on a schedule
+Once created, a generator can:
 
-  Generators do not discover new music. They only work with tracks you have listened to before.
+- Generate a one-time playlist preview
+- Create a Spotify playlist
+- Keep that playlist automatically updated on a schedule
 
-  A common example is a playlist containing your top 50 tracks from the last 3 months, refreshed daily so it stays in sync with your listening habits.
+Generators do not discover new music. They only work with tracks you have listened to before.
 
-  ![Generator Overview](./screenshots/generator_overview.png)
-  ![Generator Create](./screenshots/generator_create.png)
+A common example is a playlist containing your top 50 tracks from the last 3 months, refreshed daily so it stays in sync with your listening habits.
+
+![Generator Overview](./screenshots/generator_overview.png)
+![Generator Create](./screenshots/generator_create.png)
 </details>
 
 ## FAQ
