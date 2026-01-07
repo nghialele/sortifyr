@@ -328,7 +328,7 @@ const Window = ({ form, path }: { form: UseFormReturnType<GeneratorSchema>, path
                   <HoverCard.Dropdown>
                     <p>Dynamic time ranges move with time.</p>
                     <p>As days pass, both the start and end of the range update automatically.</p>
-                    <p>This is usefull for ranges such as "the last 3 months" that should always be relative to today.</p>
+                    <p>{`This is usefull for ranges such as "the last 3 months" that should always be relative to today.`}</p>
                   </HoverCard.Dropdown>
                 </HoverCard>
               </Group>
