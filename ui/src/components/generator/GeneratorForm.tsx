@@ -52,7 +52,8 @@ export const GeneratorForm = ({ generator: initialGenerator }: Props) => {
             start: daysAgo(14),
             end: new Date(),
             minPlays: 5,
-            burstIntervalDays: 14
+            burstIntervalDays: 14,
+            dynamic: false,
           },
         },
         paramsOldTop: {
@@ -60,13 +61,15 @@ export const GeneratorForm = ({ generator: initialGenerator }: Props) => {
             start: daysAgo(365),
             end: daysAgo(100),
             minPlays: 5,
-            burstIntervalDays: 14
+            burstIntervalDays: 14,
+            dynamic: false,
           },
           recentWindow: {
             start: daysAgo(30),
             end: new Date(),
             minPlays: 2,
-            burstIntervalDays: 14
+            burstIntervalDays: 14,
+            dynamic: false,
           }
         }
       }

@@ -37,6 +37,7 @@ type trackPlayCount struct {
 
 func (g *generator) top(ctx context.Context, gen model.Generator) ([]model.Track, error) {
 	params := gen.Params.ParamsTop
+	window := dynamicWindow(params.Window)
 
 	// Get all excluded tracks
 	// Can be from the excluded tracks list
@@ -57,7 +58,7 @@ func (g *generator) top(ctx context.Context, gen model.Generator) ([]model.Track
 	skipped := false
 	history, err := g.history.GetPopulatedFiltered(ctx, model.HistoryFilter{
 		UserID:  gen.UserID,
-		Start:   params.Window.Start,
+		Start:   window.Start,
 		Skipped: &skipped,
 	})
 	if err != nil {
@@ -88,7 +89,7 @@ func (g *generator) top(ctx context.Context, gen model.Generator) ([]model.Track
 			continue
 		}
 
-		if hasBurst(playedAts[h.TrackID], params.Window) {
+		if hasBurst(playedAts[h.TrackID], window) {
 			tracks = append(tracks, trackPlayCount{
 				track:     h.Track,
 				playCount: len(playedAts[h.TrackID]),
@@ -111,6 +112,8 @@ func (g *generator) top(ctx context.Context, gen model.Generator) ([]model.Track
 
 func (g *generator) oldTop(ctx context.Context, gen model.Generator) ([]model.Track, error) {
 	params := gen.Params.ParamsOldTop
+	recentWindow := dynamicWindow(params.RecentWindow)
+	peakWindow := dynamicWindow(params.PeakWindow)
 
 	// Get all excluded tracks
 	// Can be from the excluded tracks list
@@ -131,8 +134,8 @@ func (g *generator) oldTop(ctx context.Context, gen model.Generator) ([]model.Tr
 	skipped := false
 	recent, err := g.history.GetPopulatedFiltered(ctx, model.HistoryFilter{
 		UserID:  gen.UserID,
-		Start:   params.RecentWindow.Start,
-		End:     params.RecentWindow.End,
+		Start:   recentWindow.Start,
+		End:     recentWindow.End,
 		Skipped: &skipped,
 	})
 	if err != nil {
@@ -152,8 +155,8 @@ func (g *generator) oldTop(ctx context.Context, gen model.Generator) ([]model.Tr
 	// Get all relevant peak history
 	old, err := g.history.GetPopulatedFiltered(ctx, model.HistoryFilter{
 		UserID:  gen.UserID,
-		Start:   params.PeakWindow.Start,
-		End:     params.PeakWindow.End,
+		Start:   peakWindow.Start,
+		End:     peakWindow.End,
 		Skipped: &skipped,
 	})
 	if err != nil {
@@ -185,12 +188,12 @@ func (g *generator) oldTop(ctx context.Context, gen model.Generator) ([]model.Tr
 		}
 
 		// Did we play it too much recently?
-		if hasBurst(recentPlayedAts[o.TrackID], params.RecentWindow) {
+		if hasBurst(recentPlayedAts[o.TrackID], recentWindow) {
 			continue
 		}
 
 		// Did we play it enough times in the past?
-		if !hasBurst(oldPlayedAts[o.TrackID], params.PeakWindow) {
+		if !hasBurst(oldPlayedAts[o.TrackID], peakWindow) {
 			continue
 		}
 

@@ -17,10 +17,11 @@ const (
 // We need json tags because the params are saved as jsonb
 
 type GeneratorWindow struct {
-	Start         time.Time     `json:"start"`
-	End           time.Time     `json:"end"`
-	MinPlays      int           `json:"min_plays"`
-	BurstInterval time.Duration `json:"burst_interval"`
+	Start            time.Time     `json:"start"`
+	End              time.Time     `json:"end"`
+	MinPlays         int           `json:"min_plays"`
+	BurstInterval    time.Duration `json:"burst_interval"`
+	DynamicReference time.Time     `json:"dynamic_reference"`
 }
 
 type GeneratorPresetTopParams struct {
@@ -53,6 +54,7 @@ type Generator struct {
 	SpotifyOutdated bool
 	Params          GeneratorParams
 	UpdatedAt       time.Time
+	CreatedAt       time.Time
 
 	// Non db fields
 	User   User
@@ -73,6 +75,7 @@ func GeneratorModel(g sqlc.Generator) *Generator {
 		SpotifyOutdated: g.SpotifyOutdated,
 		Params:          params,
 		UpdatedAt:       g.UpdatedAt.Time,
+		CreatedAt:       g.CreatedAt.Time,
 	}
 }
 

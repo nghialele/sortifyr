@@ -26,3 +26,16 @@ func hasBurst(times []time.Time, window model.GeneratorWindow) bool {
 
 	return false
 }
+
+func dynamicWindow(window model.GeneratorWindow) model.GeneratorWindow {
+	if window.DynamicReference.IsZero() {
+		return window
+	}
+
+	offset := time.Since(window.DynamicReference)
+
+	window.Start = window.Start.Add(offset)
+	window.End = window.End.Add(offset)
+
+	return window
+}

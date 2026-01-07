@@ -67,7 +67,7 @@ export const GeneratorOverview = () => {
     if (!generatorToDelete) return
 
     generatorDelete.mutateAsync({ generator: generatorToDelete, deletePlaylist: checkedPlaylist }, {
-      onSuccess: () => notifications.show({ message: "Generated deleted" }),
+      onSuccess: () => notifications.show({ message: "Generator deleted" }),
       onError: async error => {
         const msg = await getErrorMessage(error)
         notifications.show({ color: "red", message: msg })

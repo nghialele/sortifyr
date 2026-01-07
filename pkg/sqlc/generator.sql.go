@@ -53,7 +53,7 @@ func (q *Queries) GeneratorDelete(ctx context.Context, id int32) error {
 }
 
 const generatorGet = `-- name: GeneratorGet :one
-SELECT id, user_id, name, description, playlist_id, interval, spotify_outdated, parameters, updated_at
+SELECT id, user_id, name, description, playlist_id, interval, spotify_outdated, parameters, updated_at, created_at
 FROM generators
 WHERE id = $1
 `
@@ -71,12 +71,13 @@ func (q *Queries) GeneratorGet(ctx context.Context, id int32) (Generator, error)
 		&i.SpotifyOutdated,
 		&i.Parameters,
 		&i.UpdatedAt,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const generatorGetAll = `-- name: GeneratorGetAll :many
-SELECT g.id, g.user_id, g.name, g.description, g.playlist_id, g.interval, g.spotify_outdated, g.parameters, g.updated_at, u.id, u.uid, u.name, u.display_name, u.email
+SELECT g.id, g.user_id, g.name, g.description, g.playlist_id, g.interval, g.spotify_outdated, g.parameters, g.updated_at, g.created_at, u.id, u.uid, u.name, u.display_name, u.email
 FROM generators g
 LEFT JOIN users u ON u.id = g.user_id
 `
@@ -105,6 +106,7 @@ func (q *Queries) GeneratorGetAll(ctx context.Context) ([]GeneratorGetAllRow, er
 			&i.Generator.SpotifyOutdated,
 			&i.Generator.Parameters,
 			&i.Generator.UpdatedAt,
+			&i.Generator.CreatedAt,
 			&i.User.ID,
 			&i.User.Uid,
 			&i.User.Name,
@@ -123,7 +125,7 @@ func (q *Queries) GeneratorGetAll(ctx context.Context) ([]GeneratorGetAllRow, er
 
 const generatorGetByUserPopulated = `-- name: GeneratorGetByUserPopulated :many
 SELECT
-  g.id, g.user_id, g.name, g.description, g.playlist_id, g.interval, g.spotify_outdated, g.parameters, g.updated_at,
+  g.id, g.user_id, g.name, g.description, g.playlist_id, g.interval, g.spotify_outdated, g.parameters, g.updated_at, g.created_at,
   COALESCE(json_agg(t.*) FILTER (WHERE t.id IS NOT NULL), '[]')::jsonb AS tracks
 FROM generators g
 LEFT JOIN generator_tracks gt ON gt.generator_id = g.id
@@ -156,6 +158,7 @@ func (q *Queries) GeneratorGetByUserPopulated(ctx context.Context, userID int32)
 			&i.Generator.SpotifyOutdated,
 			&i.Generator.Parameters,
 			&i.Generator.UpdatedAt,
+			&i.Generator.CreatedAt,
 			&i.Tracks,
 		); err != nil {
 			return nil, err

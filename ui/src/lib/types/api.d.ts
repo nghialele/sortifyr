@@ -94,6 +94,7 @@ export namespace API {
     end: string;
     min_plays: number;
     burst_interval_days: number;
+    dynamic: boolean;
   }
 
   export interface Generator extends Base {

@@ -2,7 +2,7 @@ import { useGeneratorPreview } from "@/lib/api/generator"
 import { usePlaylistGetAll } from "@/lib/api/playlist"
 import { GeneratorParamsSchema, GeneratorPreset, generatorPresetString, GeneratorSchema, GeneratorWindowSchema } from "@/lib/types/generator"
 import { getValueByPath } from "@/lib/utils"
-import { Alert, Group, Slider, Stack } from "@mantine/core"
+import { ActionIcon, Alert, Checkbox, Group, HoverCard, Slider, Stack } from "@mantine/core"
 import { DatesRangeValue } from "@mantine/dates"
 import { UseFormReturnType } from "@mantine/form"
 import { useDisclosure } from "@mantine/hooks"
@@ -15,6 +15,7 @@ import { Confirm } from "../molecules/Confirm"
 import { DatePickerInput } from "../molecules/DatePickerInput"
 import { Table } from "../molecules/Table"
 import { GeneratorPlaylistTree } from "./GeneratorPlaylistTree"
+import { LuInfo } from "react-icons/lu"
 
 type Props = {
   form: UseFormReturnType<GeneratorSchema>
@@ -244,6 +245,7 @@ const Window = ({ form, path }: { form: UseFormReturnType<GeneratorSchema>, path
   const [range, setRange] = useState<[Date | null, Date | null]>([window?.start ?? null, window?.end ?? null])
   const [plays, setPlays] = useState<number>(window?.minPlays ?? 0)
   const [burst, setBurst] = useState<number>(window?.burstIntervalDays ?? 0)
+  const [dynamic, setDynamic] = useState<boolean>(window?.dynamic ?? false)
 
   const handleRangeChange = (r: DatesRangeValue) => {
     form.setFieldValue(`${path}.start`, r[0] ?? undefined)
@@ -260,6 +262,11 @@ const Window = ({ form, path }: { form: UseFormReturnType<GeneratorSchema>, path
   const handleBurstChange = (burst: number) => {
     form.setFieldValue(`${path}.burstIntervalDays`, burst)
     setBurst(burst)
+  }
+
+  const handleDynamicChange = (dynamic: boolean) => {
+    form.setFieldValue(`${path}.dynamic`, dynamic)
+    setDynamic(dynamic)
   }
 
   return (
@@ -301,12 +308,34 @@ const Window = ({ form, path }: { form: UseFormReturnType<GeneratorSchema>, path
       <Stack gap={0}>
         <p className="text-sm font-medium">Time Range</p>
         <p className="text-xs text-muted">The total time range in which to look for the minimum amount of plays in the interval</p>
-        <DatePickerInput
-          type="range"
-          numberOfColumns={2}
-          value={range}
-          onChange={handleRangeChange}
-        />
+        <Group>
+          <DatePickerInput
+            type="range"
+            numberOfColumns={2}
+            value={range}
+            onChange={handleRangeChange}
+          />
+          <Checkbox
+            checked={dynamic}
+            onChange={e => handleDynamicChange(e.target.checked)}
+            label={(
+              <Group gap={2}>
+                <p>Dynamic</p>
+                <HoverCard>
+                  <HoverCard.Target>
+                    <ActionIcon variant="transparent" size={14} color="black" className="mb-1"><LuInfo /></ActionIcon>
+                  </HoverCard.Target>
+                  <HoverCard.Dropdown>
+                    <p>Dynamic time ranges move with time.</p>
+                    <p>As days pass, both the start and end of the range update automatically.</p>
+                    <p>This is usefull for ranges such as "the last 3 months" that should always be relative to today.</p>
+                  </HoverCard.Dropdown>
+                </HoverCard>
+              </Group>
+            )}
+            color="secondary.1"
+          />
+        </Group>
       </Stack>
     </Stack>
   )

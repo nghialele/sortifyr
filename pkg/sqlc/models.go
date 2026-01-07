@@ -111,6 +111,7 @@ type Generator struct {
 	SpotifyOutdated bool
 	Parameters      []byte
 	UpdatedAt       pgtype.Timestamptz
+	CreatedAt       pgtype.Timestamptz
 }
 
 type GeneratorTrack struct {

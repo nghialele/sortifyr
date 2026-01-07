@@ -12,23 +12,39 @@ type GeneratorWindow struct {
 	End               time.Time `json:"end"`
 	MinPlays          int       `json:"min_plays" validate:"min=0"`
 	BurstIntervalDays int       `json:"burst_interval_days"`
+	Dynamic           bool      `json:"dynamic"`
 }
 
 func generatorWindowDTO(g model.GeneratorWindow) GeneratorWindow {
+	start := g.Start
+	end := g.End
+	if !g.DynamicReference.IsZero() {
+		offset := time.Since(g.DynamicReference)
+		start = start.Add(offset)
+		end = end.Add(offset)
+	}
+
 	return GeneratorWindow{
-		Start:             g.Start,
-		End:               g.End,
+		Start:             start,
+		End:               end,
 		MinPlays:          g.MinPlays,
 		BurstIntervalDays: int(g.BurstInterval.Hours() / 24),
+		Dynamic:           !g.DynamicReference.IsZero(),
 	}
 }
 
 func (g GeneratorWindow) ToModel() *model.GeneratorWindow {
+	dynamicReference := time.Time{}
+	if g.Dynamic {
+		dynamicReference = time.Now()
+	}
+
 	return &model.GeneratorWindow{
-		Start:         g.Start,
-		End:           g.End,
-		MinPlays:      g.MinPlays,
-		BurstInterval: time.Duration(g.BurstIntervalDays) * 24 * time.Hour,
+		Start:            g.Start,
+		End:              g.End,
+		MinPlays:         g.MinPlays,
+		BurstInterval:    time.Duration(g.BurstIntervalDays) * 24 * time.Hour,
+		DynamicReference: dynamicReference,
 	}
 }
 
