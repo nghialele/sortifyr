@@ -7,23 +7,29 @@ import { TaskStatus } from "@/lib/types/task"
 import { getErrorMessage } from "@/lib/utils"
 import { FileButton, Group, Pill, Stack } from "@mantine/core"
 import { notifications } from "@mantine/notifications"
+import { useState } from "react"
 import { LuCloudUpload } from "react-icons/lu"
 
 export const Settings = () => {
   const { data: tasks } = useTaskGetAll()
   const task = tasks?.find(t => t.uid === "task-export")
 
+  const [uploading, setUploading] = useState(false)
+
   const uploadExport = useSettingUploadExport()
 
   const handleExport = (file: File | null) => {
     if (!file) return
+
+    setUploading(true)
 
     uploadExport.mutateAsync(file, {
       onSuccess: () => notifications.show({ message: "Import started. Check the task page to see the progress." }),
       onError: async (error) => {
         const msg = await getErrorMessage(error)
         notifications.show({ color: "red", message: msg })
-      }
+      },
+      onSettled: () => setUploading(false)
     })
   }
 
@@ -54,7 +60,7 @@ export const Settings = () => {
           <FileButton onChange={handleExport} accept={CONTENT_TYPE.ZIP}>
             {(props) => (
               <div>
-                <Button leftSection={<LuCloudUpload />} disabled={task?.status === TaskStatus.Running} {...props}>Upload Spotify data</Button>
+                <Button leftSection={<LuCloudUpload />} disabled={uploading || task?.status === TaskStatus.Running} {...props}>Upload Spotify data</Button>
               </div>
             )}
           </FileButton>
